@@ -1,0 +1,8 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+app/ml/saved_models/*.pkl
+.DS_Store
+*.egg-info/
