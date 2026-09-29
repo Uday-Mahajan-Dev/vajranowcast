@@ -591,3 +591,15 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 - **Interactive Swagger Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc Documentation:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+---
+
+## 8. Frontend Integration Contract (Alerts & Supabase Realtime)
+
+### Realtime Subscription & Client-Side Filtering
+- **RLS Policy Scope:** `public.alerts` allows `SELECT` for `anon` only where `is_active = true`.
+- **Realtime Behavior:** When an alert expires or is marked `is_active = false` by the backend, Supabase Realtime will **not** dispatch an update event to `anon` WebSocket subscribers because the row ceases to satisfy the `USING (is_active = true)` RLS policy.
+- **Mandatory Frontend Implementation Rules:**
+  1. **Client-Side Filtering:** The alert banner and map overlay must filter out alerts where `new Date(alert.valid_until) < new Date()` client-side in the browser.
+  2. **Periodic Re-fetch Fallback:** The frontend must poll `GET /api/v1/alerts/active` every 5 minutes (300 seconds) to synchronize the active alerts state and evict stale records.
+

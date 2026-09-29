@@ -1,11 +1,12 @@
-"""Weather observation and atmospheric instability indices API endpoints."""
+"""Weather observation and atmospheric instability indices API endpoints with grid snapping and rate limiting."""
 
 import logging
 from datetime import datetime, timezone
 from typing import Any
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request, status
 from app.config import settings
-from app.models.schemas import DataSourceStatus
+from app.core.limiter import limiter
+from app.models.schemas import DEFAULT_DISCLAIMER, DataSourceStatus
 from app.services.data_ingestion import OpenMeteoService
 from app.services.feature_engineering import FeatureEngineer
 
@@ -14,28 +15,41 @@ logger = logging.getLogger("vajranowcast.api.weather")
 router = APIRouter()
 
 
+def snap_to_grid(value: float, step: float = 0.25) -> float:
+    """Snap geographic coordinate to the nearest 0.25 degree grid node."""
+    return round(round(value / step) * step, 4)
+
+
 @router.get("/current")
+@limiter.limit(settings.RATE_LIMIT_NOWCAST)
 async def get_current_weather(
+    request: Request,
     lat: float = Query(28.61, ge=settings.INDIA_LAT_MIN, le=settings.INDIA_LAT_MAX, description="Latitude"),
     lon: float = Query(77.21, ge=settings.INDIA_LON_MIN, le=settings.INDIA_LON_MAX, description="Longitude"),
 ):
-    """Fetch raw current weather observations and hourly fields from Open-Meteo API."""
+    """Fetch raw current weather observations and hourly fields from Open-Meteo API with coordinate snapping."""
     try:
+        snapped_lat = snap_to_grid(lat)
+        snapped_lon = snap_to_grid(lon)
+
         data_service = OpenMeteoService()
-        data = await data_service.fetch_current_weather(lat, lon)
+        data = await data_service.fetch_current_weather(snapped_lat, snapped_lon)
         return {
-            "latitude": lat,
-            "longitude": lon,
+            "latitude": snapped_lat,
+            "longitude": snapped_lon,
             "request_time": datetime.now(timezone.utc).isoformat(),
             "weather": data,
+            "disclaimer": DEFAULT_DISCLAIMER,
         }
     except Exception as e:
         logger.error(f"Error fetching current weather for ({lat}, {lon}): {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal weather observation service error.")
 
 
 @router.get("/indices")
+@limiter.limit(settings.RATE_LIMIT_NOWCAST)
 async def get_atmospheric_indices(
+    request: Request,
     lat: float = Query(28.61, ge=settings.INDIA_LAT_MIN, le=settings.INDIA_LAT_MAX, description="Latitude"),
     lon: float = Query(77.21, ge=settings.INDIA_LON_MIN, le=settings.INDIA_LON_MAX, description="Longitude"),
 ):
@@ -44,14 +58,17 @@ async def get_atmospheric_indices(
     CAPE categories, CIN, Dew Point Depression, Precipitable Water, and Convective Potential.
     """
     try:
+        snapped_lat = snap_to_grid(lat)
+        snapped_lon = snap_to_grid(lon)
+
         data_service = OpenMeteoService()
-        raw_data = await data_service.fetch_current_weather(lat, lon)
+        raw_data = await data_service.fetch_current_weather(snapped_lat, snapped_lon)
 
         feature_eng = FeatureEngineer()
         features = feature_eng.build_feature_vector(
             weather_data=raw_data,
-            lat=lat,
-            lon=lon,
+            lat=snapped_lat,
+            lon=snapped_lon,
             timestamp=datetime.now(timezone.utc),
             target_hour_index=1,
         )
@@ -86,8 +103,8 @@ async def get_atmospheric_indices(
             convective_potential = "Stable / Nil Severe Activity"
 
         return {
-            "latitude": lat,
-            "longitude": lon,
+            "latitude": snapped_lat,
+            "longitude": snapped_lon,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "indices": {
                 "cape_j_kg": round(cape, 1),
@@ -100,10 +117,11 @@ async def get_atmospheric_indices(
                 "surface_pressure_hpa": round(features.get("surface_pressure", 1013.0), 1),
                 "convective_potential": convective_potential,
             },
+            "disclaimer": DEFAULT_DISCLAIMER,
         }
     except Exception as e:
         logger.error(f"Error computing atmospheric indices for ({lat}, {lon}): {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal atmospheric index calculation error.")
 
 
 @router.get("/sources/status", response_model=list[DataSourceStatus])
@@ -117,7 +135,6 @@ async def get_data_sources_status():
     # 1. Open-Meteo live status test
     try:
         service = OpenMeteoService()
-        # Test probe Delhi
         await service.fetch_current_weather(28.61, 77.21)
         open_meteo_status = "active"
     except Exception as e:

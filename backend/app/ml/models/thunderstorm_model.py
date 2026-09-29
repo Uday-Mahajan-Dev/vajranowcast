@@ -1,7 +1,9 @@
 """Machine learning inference models and rule-based fallbacks for thunderstorm and lightning prediction."""
 
-import os
+import hashlib
+import json
 import logging
+import os
 from typing import Any
 import joblib
 import numpy as np
@@ -59,7 +61,7 @@ class LightningPredictor:
 
 
 class ThunderstormClassifier:
-    """Calibrated ML classifier with rule-based fallback for thunderstorm nowcasting."""
+    """Calibrated ML classifier with integrity verification and rule-based fallback for thunderstorm nowcasting."""
 
     def __init__(self):
         self.model = None
@@ -70,10 +72,53 @@ class ThunderstormClassifier:
 
         self._load_artifacts()
 
+    @staticmethod
+    def _compute_sha256(filepath: str) -> str:
+        """Compute the SHA-256 checksum of a file."""
+        hasher = hashlib.sha256()
+        with open(filepath, "rb") as f:
+            while chunk := f.read(65536):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    def _verify_model_integrity(self, model_dir: str) -> bool:
+        """Verify model files against stored SHA-256 hashes to prevent artifact tampering."""
+        hashes_path = os.path.join(model_dir, "model_hashes.json")
+        if not os.path.exists(hashes_path):
+            logger.warning(f"Integrity check skipped: {hashes_path} not found.")
+            return True
+
+        try:
+            with open(hashes_path, "r") as f:
+                expected_hashes = json.load(f)
+
+            for filename, expected_hash in expected_hashes.items():
+                fpath = os.path.join(model_dir, filename)
+                if not os.path.exists(fpath):
+                    logger.error(f"Integrity check failed: Expected model artifact {filename} missing.")
+                    return False
+                actual_hash = self._compute_sha256(fpath)
+                if actual_hash.lower() != expected_hash.lower():
+                    logger.critical(
+                        f"CRITICAL SECURITY ALERT: Model artifact '{filename}' SHA-256 mismatch! "
+                        f"Expected {expected_hash}, got {actual_hash}. Refusing to load untrusted model."
+                    )
+                    return False
+
+            logger.info("All ML model artifacts verified successfully against SHA-256 checksums.")
+            return True
+        except Exception as e:
+            logger.error(f"Error during model integrity verification: {e}")
+            return False
+
     def _load_artifacts(self):
-        """Load trained model, scaler, feature columns, and optimal threshold."""
+        """Load trained model, scaler, feature columns, and optimal threshold with hash verification."""
         model_dir = settings.MODEL_DIR
         try:
+            # 1. Verify model integrity first
+            if not self._verify_model_integrity(model_dir):
+                raise ValueError("Model artifact integrity verification failed.")
+
             model_path = os.path.join(model_dir, "thunderstorm_model.pkl")
             scaler_path = os.path.join(model_dir, "thunderstorm_scaler.pkl")
             cols_path = os.path.join(model_dir, "feature_columns.pkl")

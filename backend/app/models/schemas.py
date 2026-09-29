@@ -5,6 +5,8 @@ from enum import Enum
 from typing import Any, Optional
 from pydantic import BaseModel, Field
 
+DEFAULT_DISCLAIMER = "Experimental AI nowcast product — not an official IMD weather warning."
+
 
 class SeverityLevel(str, Enum):
     """Storm severity classification levels."""
@@ -33,6 +35,7 @@ class ThunderstormPrediction(BaseModel):
     lightning_probability: float
     confidence: float
     contributing_factors: Optional[dict[str, Any]] = None
+    disclaimer: str = DEFAULT_DISCLAIMER
 
 
 class AlertResponse(BaseModel):
@@ -49,6 +52,7 @@ class AlertResponse(BaseModel):
     valid_until: datetime
     message: str
     is_active: bool
+    disclaimer: str = DEFAULT_DISCLAIMER
 
 
 class NowcastResponse(BaseModel):
@@ -56,6 +60,7 @@ class NowcastResponse(BaseModel):
     request_time: datetime
     predictions: list[ThunderstormPrediction]
     metadata: dict[str, Any]
+    disclaimer: str = DEFAULT_DISCLAIMER
 
 
 class DataSourceStatus(BaseModel):
@@ -74,3 +79,4 @@ class HistoricalResponse(BaseModel):
     prediction: ThunderstormPrediction
     actual_weather_code: Optional[int] = None
     actual_was_thunderstorm: Optional[bool] = None
+    disclaimer: str = DEFAULT_DISCLAIMER
