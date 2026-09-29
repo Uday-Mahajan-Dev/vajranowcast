@@ -29,12 +29,21 @@ class ThunderstormPrediction(BaseModel):
     longitude: float
     timestamp: datetime
     prediction_time: datetime
+    input_time_ist: Optional[str] = Field(None, description="IST timestamp of the meteorological input row used (e.g. '2026-09-29T14:00:00+05:30')")
+    valid_from: Optional[datetime] = Field(None, description="Start of prediction validity window")
+    valid_until: Optional[datetime] = Field(None, description="End of prediction validity window")
     lead_time_hours: float
     thunderstorm_probability: float
     severity: SeverityLevel
     lightning_probability: float
     confidence: float
-    contributing_factors: Optional[dict[str, Any]] = None
+    input_conditions: Optional[dict[str, Any]] = Field(None, description="Physical atmospheric observations and stability indicators")
+    contributing_factors: Optional[dict[str, Any]] = Field(None, description="Backward-compatible alias for input_conditions")
+    extrapolated_lead_time: bool = Field(False, description="True if lead_time >= 1 hour (uses forecast NWP inputs beyond the 1-hour nowcast)")
+    lead_time_note: Optional[str] = Field(None, description="Operational note regarding model validity horizon")
+    stale: bool = Field(False, description="True if response is served from fallback cache due to rate-limit/network")
+    cached_at: Optional[datetime] = Field(None, description="Timestamp when the cached data was captured")
+    stale_reason: Optional[str] = Field(None, description="Reason why stale data was returned")
     disclaimer: str = DEFAULT_DISCLAIMER
 
 
@@ -60,6 +69,8 @@ class NowcastResponse(BaseModel):
     request_time: datetime
     predictions: list[ThunderstormPrediction]
     metadata: dict[str, Any]
+    stale: bool = Field(False, description="True if results were served from stale cache")
+    cached_at: Optional[datetime] = None
     disclaimer: str = DEFAULT_DISCLAIMER
 
 
@@ -80,3 +91,48 @@ class HistoricalResponse(BaseModel):
     actual_weather_code: Optional[int] = None
     actual_was_thunderstorm: Optional[bool] = None
     disclaimer: str = DEFAULT_DISCLAIMER
+
+
+class GridPointPrediction(BaseModel):
+    """Prediction item for a single point on the precomputed India spatial grid."""
+    latitude: float
+    longitude: float
+    thunderstorm_probability: float
+    severity: SeverityLevel
+    lightning_probability: float
+    confidence: float
+    cape: float
+    cin: float
+    precipitable_water: float
+
+
+class GridResponse(BaseModel):
+    """Precomputed regional thunderstorm nowcast grid response across India."""
+    generated_at: datetime
+    valid_until: datetime
+    lead_time_hours: float = 1.0
+    total_points: int
+    resolution_deg: float = 1.6
+    grid_resolution_km: float = 175.0
+    stale: bool = False
+    stale_reason: Optional[str] = None
+    points: list[GridPointPrediction]
+    disclaimer: str = DEFAULT_DISCLAIMER
+
+
+class HistoricalReplayEvent(BaseModel):
+    """Curated real historical convective event metadata."""
+    event_id: str
+    event_name: str
+    city: str
+    state: str
+    latitude: float
+    longitude: float
+    date: str
+    hour_ist: str
+    hour_utc: str
+    synoptic_summary: str
+    source: str
+    source_url: str
+    computed_verdict: Optional[str] = None
+    verified_by_human: bool = False

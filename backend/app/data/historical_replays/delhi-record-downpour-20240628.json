@@ -1,0 +1,73 @@
+{
+  "event_id": "delhi-record-downpour-20240628",
+  "event_name": "Delhi Severe Monsoon Onset Squall & Downpour",
+  "city": "Delhi",
+  "state": "National Capital Region",
+  "latitude": 28.61,
+  "longitude": 77.21,
+  "date": "2024-06-28",
+  "hour_ist": "07:00 IST",
+  "hour_utc": "01:30 UTC",
+  "hour_idx": 7,
+  "source": "Open-Meteo Historical Archive API (Default Reanalysis / ERA5-Land)",
+  "source_url": "https://www.ndtv.com/delhi-news/delhi-rain-delhi-weather-rain-strong-winds-in-delhi-several-flights-diverted-3001859",
+  "synoptic_summary": "Record morning convective downpour and squalls lashed Delhi-NCR during monsoon onset.",
+  "verified_by_human": false,
+  "computed_verdict": "Hit",
+  "optimal_threshold": 0.186,
+  "features_vector": {
+    "cape": 5000.0,
+    "cin": 5.7243,
+    "temperature_2m": 25.9,
+    "dewpoint_2m": 25.1,
+    "relative_humidity": 96.0,
+    "surface_pressure": 976.9,
+    "wind_speed_10m": 9.5,
+    "wind_direction_10m": 79.0,
+    "cloud_cover": 100.0,
+    "precipitable_water": 6.2913,
+    "dew_point_depression": 0.8,
+    "cape_cin_ratio": 873.4641,
+    "hour_sin": 0.9659,
+    "hour_cos": -0.2588,
+    "month_sin": 0.0,
+    "month_cos": -1.0,
+    "latitude": 28.61,
+    "longitude": 77.21,
+    "precip_1hr_ago": 2.9,
+    "precip_last_3hr": 3.5,
+    "storm_2hr_ago": 0.0,
+    "cloud_trend": 0.0,
+    "temp_trend": 0.0,
+    "pressure_trend": -0.3
+  },
+  "prediction": {
+    "thunderstorm_probability": 0.4272,
+    "severity": "moderate",
+    "lightning_probability": 0.499,
+    "confidence": 0.85,
+    "lead_time_hours": 1.0,
+    "input_conditions": {
+      "cape": 5000.0,
+      "cin": 5.7,
+      "relative_humidity": 96.0,
+      "dew_point_depression": 0.8,
+      "precipitable_water": 6.3,
+      "precip_last_3hr": 3.5,
+      "pressure_trend": -0.3
+    },
+    "contributing_factors": {
+      "cape": 5000.0,
+      "cin": 5.7,
+      "relative_humidity": 96.0,
+      "dew_point_depression": 0.8,
+      "precipitable_water": 6.3,
+      "precip_last_3hr": 3.5,
+      "pressure_trend": -0.3
+    }
+  },
+  "actual_outcome": {
+    "weather_code": 63,
+    "was_thunderstorm": true
+  }
+}

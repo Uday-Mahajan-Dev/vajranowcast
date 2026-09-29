@@ -1,0 +1,73 @@
+{
+  "event_id": "kolkata-cyclone-remal-20240527",
+  "event_name": "Kolkata Cyclone Remal Convective Squall Line",
+  "city": "Kolkata",
+  "state": "West Bengal",
+  "latitude": 22.57,
+  "longitude": 88.36,
+  "date": "2024-05-27",
+  "hour_ist": "11:00 IST",
+  "hour_utc": "05:30 UTC",
+  "hour_idx": 11,
+  "source": "Open-Meteo Historical Archive API (Default Reanalysis / ERA5-Land)",
+  "source_url": "https://www.telegraphindia.com/west-bengal/calcutta/cyclone-remal-leaves-trail-of-destruction-in-kolkata/cid/2023190",
+  "synoptic_summary": "Severe cyclonic convective squall lines and intense rainbands swept across Kolkata.",
+  "verified_by_human": false,
+  "computed_verdict": "Hit",
+  "optimal_threshold": 0.186,
+  "features_vector": {
+    "cape": 5000.0,
+    "cin": 13.252,
+    "temperature_2m": 26.5,
+    "dewpoint_2m": 25.1,
+    "relative_humidity": 92.0,
+    "surface_pressure": 983.1,
+    "wind_speed_10m": 42.5,
+    "wind_direction_10m": 309.0,
+    "cloud_cover": 100.0,
+    "precipitable_water": 6.2503,
+    "dew_point_depression": 1.4,
+    "cape_cin_ratio": 377.301,
+    "hour_sin": 0.2588,
+    "hour_cos": -0.9659,
+    "month_sin": 0.5,
+    "month_cos": -0.866,
+    "latitude": 22.57,
+    "longitude": 88.36,
+    "precip_1hr_ago": 6.7,
+    "precip_last_3hr": 9.3,
+    "storm_2hr_ago": 0.0,
+    "cloud_trend": 0.0,
+    "temp_trend": 0.0,
+    "pressure_trend": 1.4
+  },
+  "prediction": {
+    "thunderstorm_probability": 0.5156,
+    "severity": "moderate",
+    "lightning_probability": 0.5609,
+    "confidence": 0.85,
+    "lead_time_hours": 1.0,
+    "input_conditions": {
+      "cape": 5000.0,
+      "cin": 13.3,
+      "relative_humidity": 92.0,
+      "dew_point_depression": 1.4,
+      "precipitable_water": 6.3,
+      "precip_last_3hr": 9.3,
+      "pressure_trend": 1.4
+    },
+    "contributing_factors": {
+      "cape": 5000.0,
+      "cin": 13.3,
+      "relative_humidity": 92.0,
+      "dew_point_depression": 1.4,
+      "precipitable_water": 6.3,
+      "precip_last_3hr": 9.3,
+      "pressure_trend": 1.4
+    }
+  },
+  "actual_outcome": {
+    "weather_code": 65,
+    "was_thunderstorm": true
+  }
+}

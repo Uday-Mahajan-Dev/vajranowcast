@@ -13,49 +13,48 @@ logger = logging.getLogger("vajranowcast.ml")
 
 
 class SeverityClassifier:
-    """Classify storm severity based on predicted probability and atmospheric instability (CAPE)."""
+    """Classify storm severity based strictly on predicted thunderstorm probability P(TS)."""
 
     @staticmethod
-    def classify(ts_prob: float, cape: float, wind_shear: float = 0.0) -> str:
+    def classify(ts_prob: float, cape: float = 0.0, wind_shear: float = 0.0) -> str:
         """
         Classify severity into none, weak, moderate, severe, or very_severe.
-        Threshold is calibrated around optimal_threshold of 0.1860.
+        Bands depend strictly on thunderstorm probability P(TS) calibrated against optimal threshold (0.1860):
+        - >= 0.75: very_severe
+        - >= 0.60: severe
+        - >= 0.40: moderate
+        - >= 0.1860: weak
+        - < 0.1860: none
         """
-        if ts_prob < 0.15:
-            return "none"
-        if ts_prob > 0.85 and cape > 3500:
+        if ts_prob >= 0.75:
             return "very_severe"
-        if ts_prob > 0.65 and cape > 2500:
+        if ts_prob >= 0.60:
             return "severe"
-        if ts_prob > 0.40 and cape > 1000:
+        if ts_prob >= 0.40:
             return "moderate"
-        if ts_prob >= 0.15:
+        if ts_prob >= 0.1860:
             return "weak"
         return "none"
 
 
 class LightningPredictor:
-    """Predict lightning probability derived from convective instability and thunderstorm probability."""
+    """
+    Predict lightning probability derived as a simple monotonic function of thunderstorm probability.
+    Uses rule-based heuristic scaling (P(LT) = 0.90 * P(TS)) ensuring lightning never exceeds P(TS).
+    """
 
-    def predict(self, features: dict[str, Any], ts_prob: float) -> tuple[float, float]:
+    method: str = "rule-based heuristic"
+
+    def predict(self, features: dict[str, Any] = None, ts_prob: float = 0.0) -> tuple[float, float]:
         """
-        Calculate lightning probability and confidence based on CAPE and moisture factors.
+        Calculate lightning probability and confidence strictly as a monotonic function of P(TS).
+        Method: rule-based heuristic.
         Returns: (lightning_probability, confidence)
         """
-        lightning = ts_prob * 0.7
-        cape = float(features.get("cape", 0.0))
-        pw = float(features.get("precipitable_water", 0.0))
-
-        if cape > 2000:
-            lightning += 0.20
-        elif cape > 1000:
-            lightning += 0.10
-
-        if pw > 40:
-            lightning += 0.05
-
-        lightning_prob = min(max(lightning, 0.0), 0.99)
-        confidence = 0.40
+        # Monotonic scaling: P(LT) = 0.90 * P(TS)
+        lightning_prob = min(max(ts_prob * 0.90, 0.0), 0.99)
+        # Base confidence derived monotonically from storm probability
+        confidence = round(float(np.clip(0.50 + 0.40 * min(ts_prob, 1.0), 0.50, 0.90)), 4)
 
         return round(lightning_prob, 4), confidence
 
@@ -150,21 +149,23 @@ class ThunderstormClassifier:
 
     def predict(self, features: dict[str, Any]) -> tuple[float, float, str]:
         """
-        Predict thunderstorm probability, confidence score, and severity category.
+        Predict thunderstorm probability, dynamic confidence score, and severity category.
         Returns: (probability, confidence, severity)
         """
-        if self.is_trained and self.model is not None and self.scaler is not None and self.feature_columns:
+        if self.is_trained and self.model is not None and self.feature_columns:
             try:
                 # Build feature vector in exact order
                 X_raw = [float(features.get(col, 0.0)) for col in self.feature_columns]
                 X_arr = np.array(X_raw, dtype=np.float64).reshape(1, -1)
-                X_scaled = self.scaler.transform(X_arr)
 
-                # Get calibrated probability
-                prob_array = self.model.predict_proba(X_scaled)
+                # HistGradientBoosting is trained on UNSCALED features
+                prob_array = self.model.predict_proba(X_arr)
                 probability = float(prob_array[0][1])
-                confidence = 0.85
-                severity = SeverityClassifier.classify(probability, float(features.get("cape", 0.0)))
+
+                # Dynamic confidence based on distance from decision threshold (0.1860)
+                d = abs(probability - self.optimal_threshold)
+                confidence = round(float(np.clip(0.50 + 0.45 * min(d / 0.50, 1.0), 0.50, 0.95)), 4)
+                severity = SeverityClassifier.classify(probability)
 
                 return round(probability, 4), confidence, severity
             except Exception as e:
@@ -245,6 +246,6 @@ class ThunderstormClassifier:
 
         probability = float(min(score / 100.0, 0.99))
         confidence = 0.50
-        severity = SeverityClassifier.classify(probability, cape)
+        severity = SeverityClassifier.classify(probability)
 
         return round(probability, 4), confidence, severity

@@ -1,6 +1,8 @@
 {
     "model_name": "Calibrated HistGradientBoostingClassifier",
     "lead_time": "1_hour",
+    "target_description": "probability of heavy warm convective rainfall (>2 mm/h with warm, humid conditions) in the next hour, used as a thunderstorm proxy",
+    "thermodynamic_indices_description": "Empirical thermodynamic approximations derived from surface temperature, dewpoint, and surface pressure using Bolton (1980) formulas; not NWP sounding integrations",
     "optimal_threshold": 0.186,
     "features": [
         "cape",
