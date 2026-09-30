@@ -1,0 +1,2542 @@
+{
+  "event_id": "kolkata-cyclone-remal-20240527",
+  "event_name": "Kolkata Cyclone Remal Convective Squall Line",
+  "city": "Kolkata",
+  "state": "West Bengal",
+  "latitude": 22.57,
+  "longitude": 88.36,
+  "date": "2024-05-27",
+  "hour_ist": "11:00 IST",
+  "hour_utc": "05:30 UTC",
+  "hour_idx": 11,
+  "source": "Open-Meteo Historical Archive API (Default Reanalysis / ERA5-Land)",
+  "source_url": "https://www.telegraphindia.com/west-bengal/calcutta/cyclone-remal-leaves-trail-of-destruction-in-kolkata/cid/2023190",
+  "synoptic_summary": "Severe cyclonic convective squall lines and intense rainbands swept across Kolkata.",
+  "verified_by_human": false,
+  "computed_verdict": "Hit",
+  "optimal_threshold": 0.186,
+  "classification_counts": {
+    "hits": 6,
+    "misses": 0,
+    "false_alarms": 7,
+    "correct_negatives": 0,
+    "onset_hits": 0
+  },
+  "is_onset_hit": false,
+  "features_vector": {
+    "cape": 5000.0,
+    "cin": 13.252,
+    "temperature_2m": 26.5,
+    "dewpoint_2m": 25.1,
+    "relative_humidity": 92.0,
+    "surface_pressure": 983.1,
+    "wind_speed_10m": 42.5,
+    "wind_direction_10m": 309.0,
+    "cloud_cover": 100.0,
+    "precipitable_water": 6.2503,
+    "dew_point_depression": 1.4,
+    "cape_cin_ratio": 377.301,
+    "hour_sin": 0.2588,
+    "hour_cos": -0.9659,
+    "month_sin": 0.5,
+    "month_cos": -0.866,
+    "latitude": 22.57,
+    "longitude": 88.36,
+    "precip_1hr_ago": 6.7,
+    "precip_last_3hr": 9.3,
+    "storm_2hr_ago": 0.0,
+    "cloud_trend": 0.0,
+    "temp_trend": 0.0,
+    "pressure_trend": 1.4
+  },
+  "prediction": {
+    "thunderstorm_probability": 0.5156,
+    "severity": "moderate",
+    "lightning_probability": 0.464,
+    "confidence": 0.7967,
+    "lead_time_hours": 1.0,
+    "input_conditions": {
+      "relative_humidity": 92.0,
+      "dew_point_depression": 1.4,
+      "precip_last_3hr": 9.3,
+      "pressure_trend": 1.4
+    }
+  },
+  "actual_outcome": {
+    "weather_code": 65,
+    "was_thunderstorm": true,
+    "outcome_next_hour": true
+  },
+  "timeline": [
+    {
+      "hour_offset": -6,
+      "time_ist": "05:00 IST",
+      "iso_time": "2024-05-27T05:00:00+05:30",
+      "probability": 0.4272,
+      "severity": "moderate",
+      "temperature_2m": 26.3,
+      "relative_humidity": 94.0,
+      "cloud_cover": 100.0,
+      "precipitation": 1.8,
+      "weather_code": 61,
+      "label_fired": false,
+      "outcome_next_hour": true,
+      "classification": "hit",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 5.2
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 2.9
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 2.1
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.1579,
+            "precipitation": 1.5
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 1.2
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 7.6
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.2
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.2842,
+            "precipitation": 0.9
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.1489,
+            "precipitation": 0.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.1527,
+            "precipitation": 0.1
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 5.6
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.2448,
+            "precipitation": 0.9
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.186,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 3.0
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 3.9
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 2.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 1.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 2.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 4.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 6.4
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": -5,
+      "time_ist": "06:00 IST",
+      "iso_time": "2024-05-27T06:00:00+05:30",
+      "probability": 0.5156,
+      "severity": "moderate",
+      "temperature_2m": 26.5,
+      "relative_humidity": 93.0,
+      "cloud_cover": 100.0,
+      "precipitation": 4.5,
+      "weather_code": 63,
+      "label_fired": true,
+      "outcome_next_hour": false,
+      "classification": "false_alarm",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.4
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.7
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.2448,
+            "precipitation": 3.1
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.2842,
+            "precipitation": 3.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 2.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 2.2
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.2448,
+            "precipitation": 2.4
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.186,
+            "precipitation": 3.8
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.186,
+            "precipitation": 1.4
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 2.1
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 4.8
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.5
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.186,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.1076,
+            "precipitation": 1.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 3.2
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 8.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 6.1
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 4.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.3467,
+            "precipitation": 1.9
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 3.8
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 14.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 13.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 9.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 4.0
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": -4,
+      "time_ist": "07:00 IST",
+      "iso_time": "2024-05-27T07:00:00+05:30",
+      "probability": 0.5156,
+      "severity": "moderate",
+      "temperature_2m": 26.2,
+      "relative_humidity": 95.0,
+      "cloud_cover": 100.0,
+      "precipitation": 1.7,
+      "weather_code": 61,
+      "label_fired": false,
+      "outcome_next_hour": false,
+      "classification": "false_alarm",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.2448,
+            "precipitation": 0.4
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 1.4
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 1.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 1.9
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 6.2
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 5.8
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 1.6
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.2448,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 5.1
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 1.0,
+            "precipitation": 7.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.1489,
+            "precipitation": 0.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 5.8
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 1.0,
+            "precipitation": 5.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 1.0,
+            "precipitation": 1.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 1.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 6.8
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 5.6
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.9
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 3.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 2.3
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": -3,
+      "time_ist": "08:00 IST",
+      "iso_time": "2024-05-27T08:00:00+05:30",
+      "probability": 0.5156,
+      "severity": "moderate",
+      "temperature_2m": 26.7,
+      "relative_humidity": 93.0,
+      "cloud_cover": 100.0,
+      "precipitation": 1.3,
+      "weather_code": 61,
+      "label_fired": false,
+      "outcome_next_hour": false,
+      "classification": "false_alarm",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.186,
+            "precipitation": 0.7
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 2.9
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 4.7
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 7.4
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 4.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 3.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 4.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 1.0,
+            "precipitation": 3.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 2.7
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.4614,
+            "precipitation": 5.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 2.1
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.186,
+            "precipitation": 0.1
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.186,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 3.8
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 3.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 2.0
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.1527,
+            "precipitation": 0.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.0701,
+            "precipitation": 0.7
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 4.3
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.8
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 5.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 7.2
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": -2,
+      "time_ist": "09:00 IST",
+      "iso_time": "2024-05-27T09:00:00+05:30",
+      "probability": 0.4272,
+      "severity": "moderate",
+      "temperature_2m": 26.8,
+      "relative_humidity": 93.0,
+      "cloud_cover": 100.0,
+      "precipitation": 1.3,
+      "weather_code": 61,
+      "label_fired": false,
+      "outcome_next_hour": true,
+      "classification": "hit",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.1489,
+            "precipitation": 0.9
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.2842,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.2842,
+            "precipitation": 1.2
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 5.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.2842,
+            "precipitation": 4.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 3.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 5.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.4926,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 3.2
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 4.4
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.1076,
+            "precipitation": 0.2
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.1489,
+            "precipitation": 0.2
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 3.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 3.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 1.2
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.1132,
+            "precipitation": 0.7
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 4.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.3
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 6.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 5.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 1.2
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": -1,
+      "time_ist": "10:00 IST",
+      "iso_time": "2024-05-27T10:00:00+05:30",
+      "probability": 0.4272,
+      "severity": "moderate",
+      "temperature_2m": 26.5,
+      "relative_humidity": 92.0,
+      "cloud_cover": 100.0,
+      "precipitation": 6.7,
+      "weather_code": 63,
+      "label_fired": true,
+      "outcome_next_hour": true,
+      "classification": "hit",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.186,
+            "precipitation": 5.7
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.3
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 4.1
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 3.9
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 4.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 6.2
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 3.9
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 3.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.3467,
+            "precipitation": 1.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.186,
+            "precipitation": 0.4
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 1.6
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 6.7
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 6.7
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.2842,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.1489,
+            "precipitation": 0.7
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 1.1
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 12.3
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 2.7
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 3.1
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.1579,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 18.9
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 3.9
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 0.6
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.2448,
+            "precipitation": 0.2
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": 0,
+      "time_ist": "11:00 IST",
+      "iso_time": "2024-05-27T11:00:00+05:30",
+      "probability": 0.5156,
+      "severity": "moderate",
+      "temperature_2m": 26.5,
+      "relative_humidity": 92.0,
+      "cloud_cover": 100.0,
+      "precipitation": 10.9,
+      "weather_code": 65,
+      "label_fired": true,
+      "outcome_next_hour": true,
+      "classification": "hit",
+      "is_onset": false,
+      "is_replay_hour": true,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 3.1
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 2.8
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 4.8
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 4.4
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 6.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.9
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 11.4
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 10.8
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.2842,
+            "precipitation": 6.5
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 20.6
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 10.9
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.3467,
+            "precipitation": 0.9
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.186,
+            "precipitation": 3.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 3.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 1.0,
+            "precipitation": 19.8
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 1.0,
+            "precipitation": 2.0
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.2448,
+            "precipitation": 0.2
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.2448,
+            "precipitation": 0.8
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.5156,
+            "precipitation": 3.5
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 11.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.6
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 1.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.1489,
+            "precipitation": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": 1,
+      "time_ist": "12:00 IST",
+      "iso_time": "2024-05-27T12:00:00+05:30",
+      "probability": 0.5156,
+      "severity": "moderate",
+      "temperature_2m": 26.7,
+      "relative_humidity": 91.0,
+      "cloud_cover": 100.0,
+      "precipitation": 10.0,
+      "weather_code": 65,
+      "label_fired": true,
+      "outcome_next_hour": true,
+      "classification": "hit",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 2.9
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.1
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 12.7
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 14.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.3467,
+            "precipitation": 1.6
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.4
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 11.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 10.8
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 4.9
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.3467,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 4.1
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 10.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 3.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 0.3
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 3.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 5.1
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.2448,
+            "precipitation": 0.4
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 2.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 4.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 5.7
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 2.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.186,
+            "precipitation": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": 2,
+      "time_ist": "13:00 IST",
+      "iso_time": "2024-05-27T13:00:00+05:30",
+      "probability": 0.4272,
+      "severity": "moderate",
+      "temperature_2m": 27.0,
+      "relative_humidity": 90.0,
+      "cloud_cover": 100.0,
+      "precipitation": 2.9,
+      "weather_code": 63,
+      "label_fired": true,
+      "outcome_next_hour": true,
+      "classification": "hit",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.2842,
+            "precipitation": 0.7
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 2.9
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 4.4
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 7.9
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.186,
+            "precipitation": 0.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 5.2
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.2448,
+            "precipitation": 1.8
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 2.9
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 4.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 4.9
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.2842,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 3.7
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 4.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 5.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 1.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 2.4
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.5156,
+            "precipitation": 5.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.9
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.5,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.2842,
+            "precipitation": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": 3,
+      "time_ist": "14:00 IST",
+      "iso_time": "2024-05-27T14:00:00+05:30",
+      "probability": 0.4272,
+      "severity": "moderate",
+      "temperature_2m": 27.0,
+      "relative_humidity": 90.0,
+      "cloud_cover": 100.0,
+      "precipitation": 2.8,
+      "weather_code": 63,
+      "label_fired": true,
+      "outcome_next_hour": false,
+      "classification": "false_alarm",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.1527,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.186,
+            "precipitation": 0.4
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 3.3
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 2.8
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 3.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.1527,
+            "precipitation": 0.4
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.2842,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 3.6
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 3.6
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.186,
+            "precipitation": 0.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 1.5
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 2.8
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 4.7
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 8.7
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.2842,
+            "precipitation": 0.8
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 3.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 4.2
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 1.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 3.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.3467,
+            "precipitation": 1.5
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.3467,
+            "precipitation": 2.4
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": 4,
+      "time_ist": "15:00 IST",
+      "iso_time": "2024-05-27T15:00:00+05:30",
+      "probability": 0.4272,
+      "severity": "moderate",
+      "temperature_2m": 27.0,
+      "relative_humidity": 89.0,
+      "cloud_cover": 100.0,
+      "precipitation": 1.5,
+      "weather_code": 61,
+      "label_fired": false,
+      "outcome_next_hour": false,
+      "classification": "false_alarm",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.0381,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.1132,
+            "precipitation": 0.1
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.186,
+            "precipitation": 0.9
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.2842,
+            "precipitation": 0.8
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.1132,
+            "precipitation": 0.6
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.186,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.2448,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 2.9
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.1489,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.2842,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 1.5
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 3.2
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 5.4
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.2842,
+            "precipitation": 1.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 2.2
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 5.7
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.2842,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.4272,
+            "precipitation": 1.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.4272,
+            "precipitation": 4.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 4.8
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 3.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 4.2
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": 5,
+      "time_ist": "16:00 IST",
+      "iso_time": "2024-05-27T16:00:00+05:30",
+      "probability": 0.2842,
+      "severity": "weak",
+      "temperature_2m": 26.9,
+      "relative_humidity": 90.0,
+      "cloud_cover": 100.0,
+      "precipitation": 1.3,
+      "weather_code": 61,
+      "label_fired": false,
+      "outcome_next_hour": false,
+      "classification": "false_alarm",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.0282,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.0701,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.186,
+            "precipitation": 0.2
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.1527,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.2842,
+            "precipitation": 0.6
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.0701,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.1489,
+            "precipitation": 0.7
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.1527,
+            "precipitation": 2.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.2448,
+            "precipitation": 2.2
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 3.9
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.1489,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.1489,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.2842,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 3.7
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 4.6
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.1489,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.2842,
+            "precipitation": 1.1
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 2.1
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 3.6
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.1132,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.3467,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.5156,
+            "precipitation": 1.7
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 11.8
+          }
+        ]
+      }
+    },
+    {
+      "hour_offset": 6,
+      "time_ist": "17:00 IST",
+      "iso_time": "2024-05-27T17:00:00+05:30",
+      "probability": 0.2448,
+      "severity": "weak",
+      "temperature_2m": 27.1,
+      "relative_humidity": 88.0,
+      "cloud_cover": 100.0,
+      "precipitation": 0.5,
+      "weather_code": 53,
+      "label_fired": false,
+      "outcome_next_hour": false,
+      "classification": "false_alarm",
+      "is_onset": false,
+      "is_replay_hour": false,
+      "local_field": {
+        "grid_size": 5,
+        "spacing_deg": 0.25,
+        "center_lat": 22.57,
+        "center_lon": 88.36,
+        "lats": [
+          22.07,
+          22.32,
+          22.57,
+          22.82,
+          23.07
+        ],
+        "lons": [
+          87.86,
+          88.11,
+          88.36,
+          88.61,
+          88.86
+        ],
+        "wind_700hpa": null,
+        "cells": [
+          {
+            "lat": 22.07,
+            "lon": 87.86,
+            "prob": 0.0168,
+            "precipitation": 0.1
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.11,
+            "prob": 0.0282,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.36,
+            "prob": 0.1132,
+            "precipitation": 0.2
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.61,
+            "prob": 0.0341,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.07,
+            "lon": 88.86,
+            "prob": 0.1579,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.32,
+            "lon": 87.86,
+            "prob": 0.0168,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.11,
+            "prob": 0.1132,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.36,
+            "prob": 0.186,
+            "precipitation": 0.3
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.61,
+            "prob": 0.2448,
+            "precipitation": 0.6
+          },
+          {
+            "lat": 22.32,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 2.1
+          },
+          {
+            "lat": 22.57,
+            "lon": 87.86,
+            "prob": 0.1527,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.11,
+            "prob": 0.1489,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.36,
+            "prob": 0.2448,
+            "precipitation": 0.5
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 1.6
+          },
+          {
+            "lat": 22.57,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 2.3
+          },
+          {
+            "lat": 22.82,
+            "lon": 87.86,
+            "prob": 0.1076,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.11,
+            "prob": 0.1579,
+            "precipitation": 0.2
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.36,
+            "prob": 0.4272,
+            "precipitation": 1.0
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.61,
+            "prob": 0.4272,
+            "precipitation": 1.3
+          },
+          {
+            "lat": 22.82,
+            "lon": 88.86,
+            "prob": 0.4272,
+            "precipitation": 2.5
+          },
+          {
+            "lat": 23.07,
+            "lon": 87.86,
+            "prob": 0.0701,
+            "precipitation": 0.0
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.11,
+            "prob": 0.186,
+            "precipitation": 0.7
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.36,
+            "prob": 0.3467,
+            "precipitation": 1.2
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.61,
+            "prob": 0.5156,
+            "precipitation": 2.1
+          },
+          {
+            "lat": 23.07,
+            "lon": 88.86,
+            "prob": 0.5156,
+            "precipitation": 3.3
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,7 +1,9 @@
 """Machine learning inference models and rule-based fallbacks for thunderstorm and lightning prediction."""
 
-import os
+import hashlib
+import json
 import logging
+import os
 from typing import Any
 import joblib
 import numpy as np
@@ -11,55 +13,54 @@ logger = logging.getLogger("vajranowcast.ml")
 
 
 class SeverityClassifier:
-    """Classify storm severity based on predicted probability and atmospheric instability (CAPE)."""
+    """Classify storm severity based strictly on predicted thunderstorm probability P(TS)."""
 
     @staticmethod
-    def classify(ts_prob: float, cape: float, wind_shear: float = 0.0) -> str:
+    def classify(ts_prob: float, cape: float = 0.0, wind_shear: float = 0.0) -> str:
         """
         Classify severity into none, weak, moderate, severe, or very_severe.
-        Threshold is calibrated around optimal_threshold of 0.1860.
+        Bands depend strictly on thunderstorm probability P(TS) calibrated against optimal threshold (0.1860):
+        - >= 0.75: very_severe
+        - >= 0.60: severe
+        - >= 0.40: moderate
+        - >= 0.1860: weak
+        - < 0.1860: none
         """
-        if ts_prob < 0.15:
-            return "none"
-        if ts_prob > 0.85 and cape > 3500:
+        if ts_prob >= 0.75:
             return "very_severe"
-        if ts_prob > 0.65 and cape > 2500:
+        if ts_prob >= 0.60:
             return "severe"
-        if ts_prob > 0.40 and cape > 1000:
+        if ts_prob >= 0.40:
             return "moderate"
-        if ts_prob >= 0.15:
+        if ts_prob >= 0.1860:
             return "weak"
         return "none"
 
 
 class LightningPredictor:
-    """Predict lightning probability derived from convective instability and thunderstorm probability."""
+    """
+    Predict lightning probability derived as a simple monotonic function of thunderstorm probability.
+    Uses rule-based heuristic scaling (P(LT) = 0.90 * P(TS)) ensuring lightning never exceeds P(TS).
+    """
 
-    def predict(self, features: dict[str, Any], ts_prob: float) -> tuple[float, float]:
+    method: str = "rule-based heuristic"
+
+    def predict(self, features: dict[str, Any] = None, ts_prob: float = 0.0) -> tuple[float, float]:
         """
-        Calculate lightning probability and confidence based on CAPE and moisture factors.
+        Calculate lightning probability and confidence strictly as a monotonic function of P(TS).
+        Method: rule-based heuristic.
         Returns: (lightning_probability, confidence)
         """
-        lightning = ts_prob * 0.7
-        cape = float(features.get("cape", 0.0))
-        pw = float(features.get("precipitable_water", 0.0))
-
-        if cape > 2000:
-            lightning += 0.20
-        elif cape > 1000:
-            lightning += 0.10
-
-        if pw > 40:
-            lightning += 0.05
-
-        lightning_prob = min(max(lightning, 0.0), 0.99)
-        confidence = 0.40
+        # Monotonic scaling: P(LT) = 0.90 * P(TS)
+        lightning_prob = min(max(ts_prob * 0.90, 0.0), 0.99)
+        # Base confidence derived monotonically from storm probability
+        confidence = round(float(np.clip(0.50 + 0.40 * min(ts_prob, 1.0), 0.50, 0.90)), 4)
 
         return round(lightning_prob, 4), confidence
 
 
 class ThunderstormClassifier:
-    """Calibrated ML classifier with rule-based fallback for thunderstorm nowcasting."""
+    """Calibrated ML classifier with integrity verification and rule-based fallback for thunderstorm nowcasting."""
 
     def __init__(self):
         self.model = None
@@ -70,10 +71,53 @@ class ThunderstormClassifier:
 
         self._load_artifacts()
 
+    @staticmethod
+    def _compute_sha256(filepath: str) -> str:
+        """Compute the SHA-256 checksum of a file."""
+        hasher = hashlib.sha256()
+        with open(filepath, "rb") as f:
+            while chunk := f.read(65536):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    def _verify_model_integrity(self, model_dir: str) -> bool:
+        """Verify model files against stored SHA-256 hashes to prevent artifact tampering."""
+        hashes_path = os.path.join(model_dir, "model_hashes.json")
+        if not os.path.exists(hashes_path):
+            logger.warning(f"Integrity check skipped: {hashes_path} not found.")
+            return True
+
+        try:
+            with open(hashes_path, "r") as f:
+                expected_hashes = json.load(f)
+
+            for filename, expected_hash in expected_hashes.items():
+                fpath = os.path.join(model_dir, filename)
+                if not os.path.exists(fpath):
+                    logger.error(f"Integrity check failed: Expected model artifact {filename} missing.")
+                    return False
+                actual_hash = self._compute_sha256(fpath)
+                if actual_hash.lower() != expected_hash.lower():
+                    logger.critical(
+                        f"CRITICAL SECURITY ALERT: Model artifact '{filename}' SHA-256 mismatch! "
+                        f"Expected {expected_hash}, got {actual_hash}. Refusing to load untrusted model."
+                    )
+                    return False
+
+            logger.info("All ML model artifacts verified successfully against SHA-256 checksums.")
+            return True
+        except Exception as e:
+            logger.error(f"Error during model integrity verification: {e}")
+            return False
+
     def _load_artifacts(self):
-        """Load trained model, scaler, feature columns, and optimal threshold."""
+        """Load trained model, scaler, feature columns, and optimal threshold with hash verification."""
         model_dir = settings.MODEL_DIR
         try:
+            # 1. Verify model integrity first
+            if not self._verify_model_integrity(model_dir):
+                raise ValueError("Model artifact integrity verification failed.")
+
             model_path = os.path.join(model_dir, "thunderstorm_model.pkl")
             scaler_path = os.path.join(model_dir, "thunderstorm_scaler.pkl")
             cols_path = os.path.join(model_dir, "feature_columns.pkl")
@@ -105,21 +149,23 @@ class ThunderstormClassifier:
 
     def predict(self, features: dict[str, Any]) -> tuple[float, float, str]:
         """
-        Predict thunderstorm probability, confidence score, and severity category.
+        Predict thunderstorm probability, dynamic confidence score, and severity category.
         Returns: (probability, confidence, severity)
         """
-        if self.is_trained and self.model is not None and self.scaler is not None and self.feature_columns:
+        if self.is_trained and self.model is not None and self.feature_columns:
             try:
                 # Build feature vector in exact order
                 X_raw = [float(features.get(col, 0.0)) for col in self.feature_columns]
                 X_arr = np.array(X_raw, dtype=np.float64).reshape(1, -1)
-                X_scaled = self.scaler.transform(X_arr)
 
-                # Get calibrated probability
-                prob_array = self.model.predict_proba(X_scaled)
+                # HistGradientBoosting is trained on UNSCALED features
+                prob_array = self.model.predict_proba(X_arr)
                 probability = float(prob_array[0][1])
-                confidence = 0.85
-                severity = SeverityClassifier.classify(probability, float(features.get("cape", 0.0)))
+
+                # Dynamic confidence based on distance from decision threshold (0.1860)
+                d = abs(probability - self.optimal_threshold)
+                confidence = round(float(np.clip(0.50 + 0.45 * min(d / 0.50, 1.0), 0.50, 0.95)), 4)
+                severity = SeverityClassifier.classify(probability)
 
                 return round(probability, 4), confidence, severity
             except Exception as e:
@@ -200,6 +246,6 @@ class ThunderstormClassifier:
 
         probability = float(min(score / 100.0, 0.99))
         confidence = 0.50
-        severity = SeverityClassifier.classify(probability, cape)
+        severity = SeverityClassifier.classify(probability)
 
         return round(probability, 4), confidence, severity

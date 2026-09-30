@@ -71,36 +71,39 @@ backend/
 
 ## 3. The 24-Feature Vector & Engineering Pipeline
 
-The model strictly consumes **24 features** in this precise index order:
+The model target is explicitly defined as the **probability of heavy warm convective rainfall (>2 mm/h with warm, humid conditions) in the next hour ($t+1$), used as a thunderstorm proxy**.
+
+The model strictly consumes **24 UNSCALED features** in this precise index order. Instability indices (`cape`, `cin`, `precipitable_water`) are computed empirically from surface observations using Bolton (1980) formulas rather than NWP sounding integrations:
 
 | Index | Feature Key | Source | Physical Description |
 |---|---|---|---|
-| 0 | `cape` | Open-Meteo | Convective Available Potential Energy ($\text{J/kg}$) |
-| 1 | `cin` | Open-Meteo | Convective Inhibition ($\text{J/kg}$) (absolute value) |
+| 0 | `cape` | Derived (Bolton 1980) | Empirical CAPE proxy from surface $\theta_e$: $((\theta_e - 300) \cdot 80)\text{.clip}(0, 5000)$ ($\text{J/kg}$) |
+| 1 | `cin` | Derived (DPD proxy) | Empirical CIN proxy: $((\text{DPD})^{1.5} \cdot 8)\text{.clip}(0, 400)$ ($\text{J/kg}$) |
 | 2 | `temperature_2m` | Open-Meteo | $2\text{m}$ Surface Air Temperature ($^\circ\text{C}$) |
 | 3 | `dewpoint_2m` | Open-Meteo | $2\text{m}$ Dew Point Temperature ($^\circ\text{C}$) |
 | 4 | `relative_humidity` | Open-Meteo | Surface Relative Humidity ($\%$) |
 | 5 | `surface_pressure` | Open-Meteo | Surface Atmospheric Pressure ($\text{hPa}$) |
-| 6 | `wind_speed_10m` | Open-Meteo | $10\text{m}$ Wind Speed ($\text{m/s}$) |
+| 6 | `wind_speed_10m` | Open-Meteo | $10\text{m}$ Wind Speed ($\text{km/h}$) |
 | 7 | `wind_direction_10m` | Open-Meteo | $10\text{m}$ Wind Direction ($^\circ$) |
 | 8 | `cloud_cover` | Open-Meteo | Total Cloud Cover ($\%$) |
-| 9 | `precipitable_water` | Open-Meteo | Total Column Integrated Water Vapour ($\text{mm}$ or $\text{kg/m}^2$) |
+| 9 | `precipitable_water` | Derived ($r_d$ proxy) | Empirical PW proxy from mixing ratio: $(r_d \cdot 0.3)\text{.clip}(5, 75)$ ($\text{kg/m}^2$) |
 | 10 | `dew_point_depression` | Computed | $T_{2\text{m}} - T_{d,2\text{m}}$ ($\ge 0^\circ\text{C}$) |
-| 11 | `cape_cin_ratio` | Computed | $\text{CAPE} / \max(\|\text{CIN}\|, 1)$ |
-| 12 | `hour_sin` | Computed | $\sin(2\pi \cdot \text{hour} / 24)$ (diurnal cycle) |
-| 13 | `hour_cos` | Computed | $\cos(2\pi \cdot \text{hour} / 24)$ (diurnal cycle) |
+| 11 | `cape_cin_ratio` | Computed | $\text{CAPE} / \max(\text{CIN}, 1)$ |
+| 12 | `hour_sin` | Computed | $\sin(2\pi \cdot \text{hour}_{\text{IST}} / 24)$ (diurnal cycle) |
+| 13 | `hour_cos` | Computed | $\cos(2\pi \cdot \text{hour}_{\text{IST}} / 24)$ (diurnal cycle) |
 | 14 | `month_sin` | Computed | $\sin(2\pi \cdot \text{month} / 12)$ (seasonal cycle) |
 | 15 | `month_cos` | Computed | $\cos(2\pi \cdot \text{month} / 12)$ (seasonal cycle) |
-| 16 | `latitude` | User / Location | Latitude coordinate in decimal degrees |
-| 17 | `longitude` | User / Location | Longitude coordinate in decimal degrees |
-| 18 | `precip_1hr_ago` | Open-Meteo (past) | Hourly precipitation $1\text{ hour}$ prior ($\text{mm}$) |
-| 19 | `precip_last_3hr` | Open-Meteo (past) | Cumulative precipitation over last $3\text{ hours}$ ($\text{mm}$) |
-| 20 | `storm_2hr_ago` | Open-Meteo (past) | Convective weather code indicator $2\text{ hours}$ prior ($1.0$ or $0.0$) |
-| 21 | `cloud_trend` | Open-Meteo (past) | Cloud cover delta: $\text{cloud}_{\text{now}} - \text{cloud}_{-1\text{h}}$ ($\%$) |
-| 22 | `temp_trend` | Open-Meteo (past) | Temperature delta: $T_{\text{now}} - T_{-1\text{h}}$ ($^\circ\text{C}$) |
-| 23 | `pressure_trend` | Open-Meteo (past) | Pressure delta: $P_{\text{now}} - P_{-1\text{h}}$ ($\text{hPa}$) |
+| 16 | `latitude` | User / Location | Original Latitude coordinate in decimal degrees |
+| 17 | `longitude` | User / Location | Original Longitude coordinate in decimal degrees |
+| 18 | `precip_1hr_ago` | Open-Meteo (past) | Hourly precipitation $1\text{ hour}$ prior ($t-1$) ($\text{mm}$) |
+| 19 | `precip_last_3hr` | Open-Meteo (past) | Cumulative precipitation over past $3\text{ hours}$ ($t-1 + t-2 + t-3$) ($\text{mm}$) |
+| 20 | `storm_2hr_ago` | Open-Meteo (past) | Thunderstorm proxy indicator $2\text{ hours}$ prior ($t-2$) ($1$ or $0$) |
+| 21 | `cloud_trend` | Open-Meteo (past) | Cloud cover delta: $\text{cloud}_t - \text{cloud}_{t-1}$ ($\%$) |
+| 22 | `temp_trend` | Open-Meteo (past) | Temperature delta: $T_t - T_{t-1}$ ($^\circ\text{C}$) |
+| 23 | `pressure_trend` | Open-Meteo (past) | Pressure delta: $P_t - P_{t-1}$ ($\text{hPa}$) |
 
 > **Data Leakage Safeguard:** Concurrent precipitation (`precipitation` at time $t$) and immediate storm activity (`storm_1hr_ago`) are **strictly excluded**. Since the goal is $t+1$ prospective nowcasting, only antecedent and state features are permitted.
+> **Model Scaling:** The HistGradientBoostingClassifier was trained on unscaled features and consumes raw 24-feature vectors directly without StandardScaler transformation.
 
 ---
 
@@ -591,3 +594,15 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 - **Interactive Swagger Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc Documentation:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+
+---
+
+## 8. Frontend Integration Contract (Alerts & Supabase Realtime)
+
+### Realtime Subscription & Client-Side Filtering
+- **RLS Policy Scope:** `public.alerts` allows `SELECT` for `anon` only where `is_active = true`.
+- **Realtime Behavior:** When an alert expires or is marked `is_active = false` by the backend, Supabase Realtime will **not** dispatch an update event to `anon` WebSocket subscribers because the row ceases to satisfy the `USING (is_active = true)` RLS policy.
+- **Mandatory Frontend Implementation Rules:**
+  1. **Client-Side Filtering:** The alert banner and map overlay must filter out alerts where `new Date(alert.valid_until) < new Date()` client-side in the browser.
+  2. **Periodic Re-fetch Fallback:** The frontend must poll `GET /api/v1/alerts/active` every 5 minutes (300 seconds) to synchronize the active alerts state and evict stale records.
+

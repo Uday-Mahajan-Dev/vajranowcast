@@ -1,0 +1,168 @@
+@import "maplibre-gl/dist/maplibre-gl.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-muted: #f1f5f9;
+  --surface-elevated: rgba(255, 255, 255, 0.96);
+  --border: rgba(226, 232, 240, 0.85);
+  --border-strong: #cbd5e1;
+  --brand-primary: #0d9488;
+  --brand-accent: #0284c7;
+  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dark {
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --surface: rgba(15, 23, 42, 0.85);
+  --surface-muted: #1e293b;
+  --surface-elevated: rgba(30, 41, 59, 0.95);
+  --border: rgba(51, 65, 85, 0.65);
+  --border-strong: #475569;
+  --brand-primary: #14b8a6;
+  --brand-accent: #38bdf8;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-inter);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular figures for atmospheric and probability numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: var(--surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+}
+
+.glass-panel-elevated {
+  background: var(--surface-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.16);
+}
+
+/* MapLibre Canvas and Markers Customization */
+.maplibregl-map {
+  font-family: var(--font-inter) !important;
+}
+
+.maplibregl-ctrl-attrib {
+  display: none !important; /* Custom collapsible attribution implemented */
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Pulsing convective impact ring */
+@keyframes convectivePulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.animate-convective-ring {
+  animation: convectivePulse 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Subtle Rain Streaks inside Convective Rings */
+@keyframes rainDrop {
+  0% {
+    transform: translateY(-8px) skewX(-15deg);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(12px) skewX(-15deg);
+    opacity: 0;
+  }
+}
+
+.rain-streak-1 {
+  animation: rainDrop 0.9s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.rain-streak-2 {
+  animation: rainDrop 0.9s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.3s;
+}
+
+.rain-streak-3 {
+  animation: rainDrop 0.9s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.6s;
+}
+
+/* Test / Drill Hazard Stripes Pattern */
+.bg-test-striped {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    #f59e0b,
+    #f59e0b 8px,
+    #0f172a 8px,
+    #0f172a 16px
+  );
+}
+
+.bg-test-striped-subtle {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(245, 158, 11, 0.15),
+    rgba(245, 158, 11, 0.15) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .rain-streak-1,
+  .rain-streak-2,
+  .rain-streak-3,
+  .animate-convective-ring {
+    animation: none !important;
+  }
+}
