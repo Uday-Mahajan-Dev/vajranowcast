@@ -9,6 +9,7 @@ import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Add backend root to sys.path
 backend_dir = Path(__file__).resolve().parent.parent
@@ -67,7 +68,7 @@ async def fetch_batch_weather(
             "precipitation_probability,cape,convective_inhibition,"
             "total_column_integrated_water_vapour,weather_code"
         ),
-        "forecast_days": 1,
+        "forecast_days": 2,
         "past_days": 1,
         "timezone": "Asia/Kolkata",
     }
@@ -89,7 +90,11 @@ def atomic_write_json(filepath: Path, payload: dict) -> None:
     os.replace(temp_path, filepath)
 
 
-async def run_precomputation(output_dir: Path) -> bool:
+async def run_precomputation(
+    output_dir: Path,
+    backend_url: Optional[str] = None,
+    admin_token: Optional[str] = None,
+) -> bool:
     """
     Generate grid_latest.json, cities_latest.json, and alerts_latest.json
     without creating git commits or triggering server redeployments.
@@ -272,7 +277,12 @@ async def run_precomputation(output_dir: Path) -> bool:
     # 5. If backend URL and Admin Token are provided, wake Render and post precomputed alerts
     if backend_url and admin_token:
         logger.info(f"Triggering Render alert generation at {backend_url}...")
-        await wake_render_and_generate_alerts(backend_url, admin_token, cities_payload)
+        try:
+            await wake_render_and_generate_alerts(backend_url, admin_token, cities_payload)
+        except Exception as e:
+            logger.warning(f"Failed to post alerts to Render: {e}. Precomputation artifacts remain valid.")
+    else:
+        logger.info("Skipping Render alert generation: backend_url or admin_token not provided.")
 
     return True
 
@@ -289,7 +299,7 @@ async def wake_render_and_generate_alerts(
     health_url = f"{backend_url.rstrip('/')}/health"
     generate_url = f"{backend_url.rstrip('/')}/api/v1/alerts/generate"
 
-    logger.info(f"Connecting to Render backend at {backend_url}...")
+    logger.info(f"Connecting to Render backend at {backend_url} to wake service...")
     async with httpx.AsyncClient(timeout=45.0) as client:
         # Step 1: Health check retry loop (wake-up)
         healthy = False
@@ -311,7 +321,7 @@ async def wake_render_and_generate_alerts(
                 await asyncio.sleep(30)
 
         if not healthy:
-            logger.error("Render backend did not respond to health checks. Cannot post alerts.")
+            logger.warning("Render backend did not respond to health checks. Skipping alert generation.")
             return False
 
         # Step 2: POST precomputed city predictions
@@ -326,13 +336,13 @@ async def wake_render_and_generate_alerts(
             logger.info(f"Posting precomputed city predictions to {generate_url}...")
             post_resp = await client.post(generate_url, json=body, headers=headers)
             if post_resp.status_code == 200:
-                logger.info(f"Successfully triggered alert generation on Render: {post_resp.json()}")
+                logger.info("Successfully triggered alert generation on Render.")
                 return True
             else:
-                logger.error(f"Alert generation failed with status {post_resp.status_code}: {post_resp.text}")
+                logger.warning(f"Alert generation returned status {post_resp.status_code}: {post_resp.text}")
                 return False
         except Exception as e:
-            logger.error(f"Failed to post alert generation request: {e}")
+            logger.warning(f"Failed to post alert generation request: {e}")
             return False
 
 
@@ -347,16 +357,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "--backend-url",
         type=str,
-        default=os.environ.get("RENDER_BACKEND_URL") or os.environ.get("BACKEND_URL") or os.environ.get("VAJRA_BACKEND_URL"),
+        default=os.environ.get("RENDER_BACKEND_URL") or os.environ.get("BACKEND_URL"),
         help="Backend URL to wake and post precomputed alerts to",
     )
     parser.add_argument(
         "--admin-token",
         type=str,
-        default=os.environ.get("ADMIN_TOKEN") or os.environ.get("X_ADMIN_TOKEN"),
+        default=os.environ.get("ADMIN_TOKEN"),
         help="X-Admin-Token for authenticating alert generation",
     )
     args = parser.parse_args()
     success = asyncio.run(run_precomputation(Path(args.output_dir), args.backend_url, args.admin_token))
     sys.exit(0 if success else 1)
+
 
