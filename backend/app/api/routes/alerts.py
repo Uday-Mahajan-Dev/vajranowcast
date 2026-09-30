@@ -8,7 +8,7 @@ from app.api.auth import require_role
 from app.api.routes.predictions import INDIAN_CITIES
 from app.config import settings
 from app.core.limiter import limiter
-from app.models.schemas import DEFAULT_DISCLAIMER
+from app.models.schemas import DEFAULT_DISCLAIMER, TestAlertRequest
 from app.services.alert_service import AlertService
 from app.services.ml_inference import NowcastingService
 
@@ -69,3 +69,38 @@ async def generate_alerts(
     except Exception as e:
         logger.error(f"Error generating alerts batch: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal alert generation error.")
+
+
+@router.post("/test")
+@limiter.limit(settings.RATE_LIMIT_ALERTS)
+async def create_test_alert(
+    request: Request,
+    payload: TestAlertRequest,
+    current_user: Dict[str, Any] = Depends(require_role(["meteorologist", "admin"])),
+):
+    """
+    Staff-only drill endpoint: create a simulated test alert with is_test=true, expiring in 15 minutes.
+    Protected endpoint: Requires 'meteorologist' or 'admin' role in Supabase Auth app_metadata or valid X-Admin-Token.
+    """
+    try:
+        user_info = f"user {current_user.get('sub')} (role: {current_user.get('role')})"
+        logger.info(f"Test alert triggered by {user_info} for city {payload.city} (tier: {payload.tier})")
+
+        alert_svc = AlertService()
+        alert = await alert_svc.create_test_alert(
+            city=payload.city,
+            tier=payload.tier,
+            lead_time_hours=payload.lead_time_hours,
+        )
+
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "triggered_by": current_user.get("role"),
+            "alert": alert,
+            "disclaimer": DEFAULT_DISCLAIMER,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating test alert: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal test alert creation error.")

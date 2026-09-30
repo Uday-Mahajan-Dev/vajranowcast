@@ -39,8 +39,10 @@ class FeatureEngineer:
                 else:
                     dt = dt.astimezone(tz)
                 parsed.append(dt)
-            except Exception:
-                parsed.append(datetime.min.replace(tzinfo=tz))
+            except Exception as e:
+                # If an invalid timestamp string is encountered, record a safe fallback
+                # rather than datetime.min (which overflows on UTC conversion)
+                parsed.append(datetime(1970, 1, 1, tzinfo=tz))
         return parsed
 
     @classmethod
@@ -97,57 +99,31 @@ class FeatureEngineer:
         Build complete 24-feature vector using the exact training formulas and lags.
         target_hour_index is lead_hours offset (0 for lead 0, 1 for lead 1, etc.).
         Returns: (features_dict, input_time_ist_dt)
+        Raises ValueError if insufficient meteorological or forecast horizon data is present.
         """
         hourly = weather_data.get("hourly", {})
         times = hourly.get("time", [])
         tz = self.get_timezone_offset(weather_data)
 
+        if not times or not hourly:
+            raise ValueError("Insufficient data: hourly weather payload is empty")
+
         now_idx, base_dt = self.find_current_hour_index(weather_data, timestamp)
         target_idx = now_idx + target_hour_index
-        if times and target_idx >= len(times):
-            target_idx = len(times) - 1
 
         parsed_times = self.parse_time_array_to_ist(times, tz)
-        if parsed_times and 0 <= target_idx < len(parsed_times):
-            row_dt_ist = parsed_times[target_idx]
-        else:
-            row_dt_ist = base_dt + timedelta(hours=target_hour_index)
+
+        if target_idx < 0 or target_idx >= len(parsed_times):
+            raise ValueError(
+                f"Insufficient forecast data: requested lead offset +{target_hour_index}h "
+                f"(index {target_idx}) exceeds available forecast horizon (length: {len(parsed_times)}, current index: {now_idx})"
+            )
+
+        row_dt_ist = parsed_times[target_idx]
 
         features = build_features_from_raw_slice(
             raw_hourly=hourly,
             target_idx=target_idx,
-            original_lat=lat,
-            original_lon=lon,
-            target_time=row_dt_ist,
-        )
-        return features, row_dt_ist
-
-    def build_feature_vector_simple(
-        self,
-        weather_data: Dict[str, Any],
-        lat: float,
-        lon: float,
-        timestamp: datetime,
-        hour_index: int = 0,
-    ) -> Tuple[Dict[str, float], datetime]:
-        """
-        Build feature vector for a specific hour index from hourly weather data.
-        Returns: (features_dict, input_time_ist_dt)
-        """
-        hourly = weather_data.get("hourly", {})
-        times = hourly.get("time", [])
-        tz = self.get_timezone_offset(weather_data)
-        idx = hour_index if times and 0 <= hour_index < len(times) else 0
-
-        parsed_times = self.parse_time_array_to_ist(times, tz)
-        if parsed_times and 0 <= idx < len(parsed_times):
-            row_dt_ist = parsed_times[idx]
-        else:
-            row_dt_ist = timestamp.astimezone(tz) if timestamp.tzinfo else timestamp.replace(tzinfo=timezone.utc).astimezone(tz)
-
-        features = build_features_from_raw_slice(
-            raw_hourly=hourly,
-            target_idx=idx,
             original_lat=lat,
             original_lon=lon,
             target_time=row_dt_ist,

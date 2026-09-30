@@ -103,10 +103,32 @@ class AlertService:
         """Asynchronously mark alerts whose valid_until timestamp has passed as inactive."""
         await asyncio.to_thread(self._sync_expire_old_alerts)
 
+    @staticmethod
+    def get_tier_for_probability(ts_prob: float) -> Optional[str]:
+        """Classify probability into alert tier: warning, advisory, watch, or None."""
+        if ts_prob >= settings.ALERT_TIER_WARNING:
+            return "warning"
+        if ts_prob >= settings.ALERT_TIER_ADVISORY:
+            return "advisory"
+        if ts_prob >= settings.ALERT_TIER_WATCH:
+            return "watch"
+        return None
+
+    @staticmethod
+    def build_tier_message(city: str, tier: str, ts_prob: float, lead_hours: float) -> str:
+        """Format honest and actionable alert message according to tier."""
+        pct = int(round(ts_prob * 100))
+        lead_int = max(1, int(round(lead_hours)))
+        if tier == "warning":
+            return f"Warning: severe convective thunderstorm and heavy rain expected in {city} within {lead_int}h ({pct}%)"
+        if tier == "advisory":
+            return f"Advisory: heavy rain possible in the next hour in {city} ({pct}%)"
+        return f"Watch: convective storm conditions developing in {city} within {lead_int}h ({pct}%)"
+
     async def generate_alerts(self, predictions_by_city: Dict[str, List[Any]]) -> List[Dict[str, Any]]:
         """
-        Evaluate city predictions against ALERT_PROB_THRESHOLD (0.60), de-duplicate against existing active
-        alerts, and persist or update in Supabase asynchronously.
+        Evaluate city predictions against 3-tier thresholds (WATCH >= 0.30, ADVISORY >= 0.40, WARNING >= 0.60),
+        de-duplicate against existing active alerts, and persist or update in Supabase asynchronously.
         """
         # Step 1: Clean up any expired alerts first
         await self.expire_old_alerts()
@@ -139,23 +161,23 @@ class AlertService:
                 else:
                     continue
 
-                if ts_prob >= settings.ALERT_PROB_THRESHOLD:
+                tier = self.get_tier_for_probability(ts_prob)
+                if tier is not None:
                     valid_from = now.isoformat()
                     valid_until = (now + timedelta(hours=lead_hours + 1.0)).isoformat()
-                    msg = (
-                        f"⚠️ {severity_val.upper()} thunderstorm expected in {city} "
-                        f"within {int(lead_hours)}h. Probability: {ts_prob * 100:.0f}%"
-                    )
+                    msg = self.build_tier_message(city, tier, ts_prob, lead_hours)
 
                     # Step 2: De-duplication check against existing active alerts for this city
                     existing_active = await asyncio.to_thread(self._sync_get_active_alerts_for_city, city)
 
                     if existing_active:
-                        # Existing active alert found: Update it with the latest threat state
+                        # Existing active alert found: Update it with latest threat state & tier
                         target_alert = existing_active[0]
                         alert_id = target_alert["alert_id"]
                         updates = {
                             "severity": severity_val,
+                            "tier": tier,
+                            "is_test": False,
                             "thunderstorm_probability": ts_prob,
                             "lightning_probability": lt_prob,
                             "valid_until": valid_until,
@@ -167,11 +189,11 @@ class AlertService:
                             await asyncio.to_thread(self._sync_update_alert, alert_id, updates)
                             target_alert.update(updates)
                             results.append(target_alert)
-                            logger.info(f"De-duplicated and updated existing alert for {city} (ID: {alert_id})")
+                            logger.info(f"De-duplicated and updated existing {tier.upper()} alert for {city} (ID: {alert_id})")
                         except Exception as e:
                             logger.error(f"Error updating existing alert in Supabase: {e}")
                     else:
-                        # No existing active alert: Create and insert new record
+                        # No existing active alert: Create and insert new tier record
                         alert_id = str(uuid.uuid4())
                         alert_dict = {
                             "alert_id": alert_id,
@@ -180,6 +202,8 @@ class AlertService:
                             "longitude": lon,
                             "alert_type": "thunderstorm",
                             "severity": severity_val,
+                            "tier": tier,
+                            "is_test": False,
                             "thunderstorm_probability": ts_prob,
                             "lightning_probability": lt_prob,
                             "valid_from": valid_from,
@@ -191,12 +215,82 @@ class AlertService:
                         try:
                             await asyncio.to_thread(self._sync_insert_alert, alert_dict)
                             results.append(alert_dict)
-                            logger.info(f"Inserted new alert for {city} (ID: {alert_id})")
+                            logger.info(f"Inserted new {tier.upper()} alert for {city} (ID: {alert_id})")
                         except Exception as e:
                             logger.error(f"Error persisting new alert to Supabase: {e}")
                             results.append(alert_dict)
 
         return results
+
+    async def create_test_alert(
+        self,
+        city: str,
+        tier: str = "warning",
+        lead_time_hours: float = 1.0,
+    ) -> Dict[str, Any]:
+        """
+        Create a staff simulation/drill alert with is_test=True, expiring strictly in 15 minutes.
+        Real alerts can NEVER be created through this method.
+        """
+        from app.api.routes.predictions import INDIAN_CITIES
+
+        # Step 1: Resolve city metadata
+        matched_city = next((c for c in INDIAN_CITIES if c["name"].lower() == city.lower()), None)
+        city_name = matched_city["name"] if matched_city else city
+        lat = matched_city["lat"] if matched_city else 28.61
+        lon = matched_city["lon"] if matched_city else 77.21
+
+        # Step 2: Normalize tier and test parameters
+        normalized_tier = tier.lower().strip()
+        if normalized_tier not in ("watch", "advisory", "warning"):
+            normalized_tier = "warning"
+
+        if normalized_tier == "warning":
+            prob = 0.65
+            sev = "severe"
+        elif normalized_tier == "advisory":
+            prob = 0.45
+            sev = "moderate"
+        else:
+            prob = 0.35
+            sev = "weak"
+
+        now = datetime.now(timezone.utc)
+        valid_from = now.isoformat()
+        # 15 minutes drill lifetime
+        valid_until = (now + timedelta(minutes=15)).isoformat()
+        msg = f"TEST — DRILL: {normalized_tier.capitalize()}: simulated convective event for {city_name} ({int(round(prob*100))}%)"
+
+        alert_id = str(uuid.uuid4())
+        alert_dict = {
+            "alert_id": alert_id,
+            "city": city_name,
+            "latitude": lat,
+            "longitude": lon,
+            "alert_type": "thunderstorm",
+            "severity": sev,
+            "tier": normalized_tier,
+            "is_test": True,
+            "thunderstorm_probability": prob,
+            "lightning_probability": prob * 0.9,
+            "valid_from": valid_from,
+            "valid_until": valid_until,
+            "lead_time_hours": lead_time_hours,
+            "message": msg,
+            "is_active": True,
+        }
+
+        # De-duplicate existing active alert for this city
+        existing_active = await asyncio.to_thread(self._sync_get_active_alerts_for_city, city_name)
+        if existing_active:
+            target_id = existing_active[0]["alert_id"]
+            await asyncio.to_thread(self._sync_update_alert, target_id, alert_dict)
+            alert_dict["alert_id"] = target_id
+        else:
+            await asyncio.to_thread(self._sync_insert_alert, alert_dict)
+
+        logger.info(f"Created TEST drill alert for {city_name} ({normalized_tier.upper()}) ID: {alert_dict['alert_id']}")
+        return alert_dict
 
     async def get_active_alerts(self) -> List[Dict[str, Any]]:
         """Fetch all active alerts asynchronously from Supabase, expiring stale ones first."""

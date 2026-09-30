@@ -1,0 +1,778 @@
+{
+  "generated_at": "2026-09-29T19:17:59.257753+00:00",
+  "valid_until": "2026-09-29T20:17:59.257753+00:00",
+  "cities_count": 10,
+  "cities": {
+    "Delhi": [
+      {
+        "latitude": 28.61,
+        "longitude": 77.21,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 52.4
+        }
+      },
+      {
+        "latitude": 28.61,
+        "longitude": 77.21,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 50.2
+        }
+      },
+      {
+        "latitude": 28.61,
+        "longitude": 77.21,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 45.8
+        }
+      },
+      {
+        "latitude": 28.61,
+        "longitude": 77.21,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 39.5
+        }
+      },
+      {
+        "latitude": 28.61,
+        "longitude": 77.21,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 21.0
+        }
+      }
+    ],
+    "Mumbai": [
+      {
+        "latitude": 19.08,
+        "longitude": 72.88,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 54.6
+        }
+      },
+      {
+        "latitude": 19.08,
+        "longitude": 72.88,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 50.2
+        }
+      },
+      {
+        "latitude": 19.08,
+        "longitude": 72.88,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0007,
+        "severity": "none",
+        "lightning_probability": 0.0006,
+        "confidence": 0.6668,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 43.7
+        }
+      },
+      {
+        "latitude": 19.08,
+        "longitude": 72.88,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 39.5
+        }
+      },
+      {
+        "latitude": 19.08,
+        "longitude": 72.88,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0033,
+        "severity": "none",
+        "lightning_probability": 0.003,
+        "confidence": 0.6645,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 37.5
+        }
+      }
+    ],
+    "Kolkata": [
+      {
+        "latitude": 22.57,
+        "longitude": 88.36,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.014,
+        "severity": "none",
+        "lightning_probability": 0.0126,
+        "confidence": 0.6548,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 31.6
+        }
+      },
+      {
+        "latitude": 22.57,
+        "longitude": 88.36,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0081,
+        "severity": "none",
+        "lightning_probability": 0.0073,
+        "confidence": 0.6601,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 24.3
+        }
+      },
+      {
+        "latitude": 22.57,
+        "longitude": 88.36,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 17.7
+        }
+      },
+      {
+        "latitude": 22.57,
+        "longitude": 88.36,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.004,
+        "severity": "none",
+        "lightning_probability": 0.0036,
+        "confidence": 0.6638,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 14.7
+        }
+      },
+      {
+        "latitude": 22.57,
+        "longitude": 88.36,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0081,
+        "severity": "none",
+        "lightning_probability": 0.0073,
+        "confidence": 0.6601,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 24.3
+        }
+      }
+    ],
+    "Chennai": [
+      {
+        "latitude": 13.08,
+        "longitude": 80.27,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0168,
+        "severity": "none",
+        "lightning_probability": 0.0151,
+        "confidence": 0.6523,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 33.5
+        }
+      },
+      {
+        "latitude": 13.08,
+        "longitude": 80.27,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.014,
+        "severity": "none",
+        "lightning_probability": 0.0126,
+        "confidence": 0.6548,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 54.6
+        }
+      },
+      {
+        "latitude": 13.08,
+        "longitude": 80.27,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.014,
+        "severity": "none",
+        "lightning_probability": 0.0126,
+        "confidence": 0.6548,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 56.9
+        }
+      },
+      {
+        "latitude": 13.08,
+        "longitude": 80.27,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0012,
+        "severity": "none",
+        "lightning_probability": 0.0011,
+        "confidence": 0.6663,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 50.2
+        }
+      },
+      {
+        "latitude": 13.08,
+        "longitude": 80.27,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0033,
+        "severity": "none",
+        "lightning_probability": 0.003,
+        "confidence": 0.6645,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 52.4
+        }
+      }
+    ],
+    "Bengaluru": [
+      {
+        "latitude": 12.97,
+        "longitude": 77.59,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 10.5
+        }
+      },
+      {
+        "latitude": 12.97,
+        "longitude": 77.59,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 1.3
+        }
+      },
+      {
+        "latitude": 12.97,
+        "longitude": 77.59,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 1.3
+        }
+      },
+      {
+        "latitude": 12.97,
+        "longitude": 77.59,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 1.3
+        }
+      },
+      {
+        "latitude": 12.97,
+        "longitude": 77.59,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 1.3
+        }
+      }
+    ],
+    "Hyderabad": [
+      {
+        "latitude": 17.39,
+        "longitude": 78.49,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 187.8
+        }
+      },
+      {
+        "latitude": 17.39,
+        "longitude": 78.49,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 151.3
+        }
+      },
+      {
+        "latitude": 17.39,
+        "longitude": 78.49,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 108.9
+        }
+      },
+      {
+        "latitude": 17.39,
+        "longitude": 78.49,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 71.3
+        }
+      },
+      {
+        "latitude": 17.39,
+        "longitude": 78.49,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 37.5
+        }
+      }
+    ],
+    "Jaipur": [
+      {
+        "latitude": 26.91,
+        "longitude": 75.79,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 148.2
+        }
+      },
+      {
+        "latitude": 26.91,
+        "longitude": 75.79,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 141.9
+        }
+      },
+      {
+        "latitude": 26.91,
+        "longitude": 75.79,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 129.5
+        }
+      },
+      {
+        "latitude": 26.91,
+        "longitude": 75.79,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 117.6
+        }
+      },
+      {
+        "latitude": 26.91,
+        "longitude": 75.79,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 84.1
+        }
+      }
+    ],
+    "Lucknow": [
+      {
+        "latitude": 26.85,
+        "longitude": 80.95,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 24.3
+        }
+      },
+      {
+        "latitude": 26.85,
+        "longitude": 80.95,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 21.0
+        }
+      },
+      {
+        "latitude": 26.85,
+        "longitude": 80.95,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 16.2
+        }
+      },
+      {
+        "latitude": 26.85,
+        "longitude": 80.95,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 14.7
+        }
+      },
+      {
+        "latitude": 26.85,
+        "longitude": 80.95,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 19.3
+        }
+      }
+    ],
+    "Guwahati": [
+      {
+        "latitude": 26.14,
+        "longitude": 91.74,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0106,
+        "severity": "none",
+        "lightning_probability": 0.0095,
+        "confidence": 0.6578,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 8.0
+        }
+      },
+      {
+        "latitude": 26.14,
+        "longitude": 91.74,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0282,
+        "severity": "none",
+        "lightning_probability": 0.0254,
+        "confidence": 0.6421,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 5.7
+        }
+      },
+      {
+        "latitude": 26.14,
+        "longitude": 91.74,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0115,
+        "severity": "none",
+        "lightning_probability": 0.0103,
+        "confidence": 0.657,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 3.7
+        }
+      },
+      {
+        "latitude": 26.14,
+        "longitude": 91.74,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0115,
+        "severity": "none",
+        "lightning_probability": 0.0103,
+        "confidence": 0.657,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 3.7
+        }
+      },
+      {
+        "latitude": 26.14,
+        "longitude": 91.74,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.014,
+        "severity": "none",
+        "lightning_probability": 0.0126,
+        "confidence": 0.6548,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 21.0
+        }
+      }
+    ],
+    "Nagpur": [
+      {
+        "latitude": 21.15,
+        "longitude": 79.09,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T19:17:59.257753+00:00",
+        "lead_time_hours": 0.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 135.6
+        }
+      },
+      {
+        "latitude": 21.15,
+        "longitude": 79.09,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T20:17:59.257753+00:00",
+        "lead_time_hours": 1.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 114.6
+        }
+      },
+      {
+        "latitude": 21.15,
+        "longitude": 79.09,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T21:17:59.257753+00:00",
+        "lead_time_hours": 2.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 100.4
+        }
+      },
+      {
+        "latitude": 21.15,
+        "longitude": 79.09,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-29T22:17:59.257753+00:00",
+        "lead_time_hours": 3.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 92.1
+        }
+      },
+      {
+        "latitude": 21.15,
+        "longitude": 79.09,
+        "timestamp": "2026-09-29T19:17:59.257753+00:00",
+        "prediction_time": "2026-09-30T01:17:59.257753+00:00",
+        "lead_time_hours": 6.0,
+        "thunderstorm_probability": 0.0001,
+        "severity": "none",
+        "lightning_probability": 0.0001,
+        "confidence": 0.6673,
+        "contributing_factors": {
+          "cape": 5000.0,
+          "cin": 84.1
+        }
+      }
+    ]
+  },
+  "disclaimer": "Experimental AI nowcast product \u2014 not an official IMD weather warning."
+}

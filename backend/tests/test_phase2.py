@@ -2,7 +2,7 @@
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 import httpx
@@ -16,6 +16,14 @@ from app.core.quota import quota_guard
 from app.main import app
 from scripts.supabase_maintenance import run_supabase_maintenance
 from app.services.data_ingestion import OpenMeteoService
+from app.services.feature_engineering import FeatureEngineer
+
+# Generate 72 rolling hourly timestamps centered around current time
+_base_time = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+MOCK_HOURLY_TIMES = [
+    (_base_time + timedelta(hours=h - 24)).strftime("%Y-%m-%dT%H:00")
+    for h in range(72)
+]
 
 MOCK_OPEN_METEO_PAYLOAD = {
     "latitude": 28.5,
@@ -34,20 +42,20 @@ MOCK_OPEN_METEO_PAYLOAD = {
         "weather_code": 2,
     },
     "hourly": {
-        "time": [f"2026-09-29T{h:02d}:00" for h in range(48)],
-        "temperature_2m": [30.0 + (h % 5) for h in range(48)],
-        "relative_humidity_2m": [60.0 + (h % 20) for h in range(48)],
-        "dew_point_2m": [22.0 + (h % 3) for h in range(48)],
-        "surface_pressure": [1000.0 + (h % 5) for h in range(48)],
-        "wind_speed_10m": [4.0 + (h % 6) for h in range(48)],
-        "wind_direction_10m": [90 + (h * 5) % 360 for h in range(48)],
-        "cloud_cover": [50 + (h % 40) for h in range(48)],
-        "precipitation": [0.0] * 48,
-        "precipitation_probability": [10] * 48,
-        "cape": [2200.0] * 48,
-        "convective_inhibition": [-25.0] * 48,
-        "total_column_integrated_water_vapour": [52.0] * 48,
-        "weather_code": [1] * 48,
+        "time": MOCK_HOURLY_TIMES,
+        "temperature_2m": [30.0 + (h % 5) for h in range(72)],
+        "relative_humidity_2m": [60.0 + (h % 20) for h in range(72)],
+        "dew_point_2m": [22.0 + (h % 3) for h in range(72)],
+        "surface_pressure": [1000.0 + (h % 5) for h in range(72)],
+        "wind_speed_10m": [4.0 + (h % 6) for h in range(72)],
+        "wind_direction_10m": [90 + (h * 5) % 360 for h in range(72)],
+        "cloud_cover": [50 + (h % 40) for h in range(72)],
+        "precipitation": [0.0] * 72,
+        "precipitation_probability": [10] * 72,
+        "cape": [2200.0] * 72,
+        "convective_inhibition": [-25.0] * 72,
+        "total_column_integrated_water_vapour": [52.0] * 72,
+        "weather_code": [1] * 72,
     },
 }
 
@@ -682,4 +690,191 @@ def test_cities_multi_location_response_timezone_matching(client, monkeypatch):
         lead6 = city_preds[4]
         assert lead6["input_time_ist"] == "2026-09-29T20:00:00+05:30"
         assert lead6["input_conditions"]["temperature_2m"] == 220.0
+
+
+def test_alert_tiers_classification_and_messages():
+    """
+    Test 3 alert tiers:
+    - WATCH: >= 0.30 (msg: Watch: convective storm conditions developing...)
+    - ADVISORY: >= 0.40 (msg: Advisory: heavy rain possible in the next hour...)
+    - WARNING: >= 0.60 (msg: Warning: severe convective thunderstorm and heavy rain expected...)
+    - Below 0.30: None
+    """
+    from app.services.alert_service import AlertService
+    from app.config import settings
+
+    assert settings.ALERT_TIER_WATCH == 0.30
+    assert settings.ALERT_TIER_ADVISORY == 0.40
+    assert settings.ALERT_TIER_WARNING == 0.60
+
+    assert AlertService.get_tier_for_probability(0.65) == "warning"
+    assert AlertService.get_tier_for_probability(0.60) == "warning"
+    assert AlertService.get_tier_for_probability(0.45) == "advisory"
+    assert AlertService.get_tier_for_probability(0.40) == "advisory"
+    assert AlertService.get_tier_for_probability(0.35) == "watch"
+    assert AlertService.get_tier_for_probability(0.30) == "watch"
+    assert AlertService.get_tier_for_probability(0.29) is None
+
+    msg_warn = AlertService.build_tier_message("Delhi", "warning", 0.65, 1.0)
+    assert "Warning: severe convective thunderstorm" in msg_warn
+    assert "(65%)" in msg_warn
+
+    msg_adv = AlertService.build_tier_message("Delhi", "advisory", 0.43, 1.0)
+    assert "Advisory: heavy rain possible" in msg_adv
+    assert "(43%)" in msg_adv
+
+    msg_watch = AlertService.build_tier_message("Delhi", "watch", 0.34, 1.0)
+    assert "Watch: convective storm conditions developing" in msg_watch
+    assert "(34%)" in msg_watch
+
+
+def test_create_test_alert_endpoint_auth(client, monkeypatch):
+    """Staff test alert endpoint requires meteorologist or admin role."""
+    from app.config import settings
+
+    # 1. Missing auth -> 401
+    res = client.post("/api/v1/alerts/test", json={"city": "Delhi", "tier": "warning"})
+    assert res.status_code == 401
+
+    # 2. Valid admin token -> 200
+    res_admin = client.post(
+        "/api/v1/alerts/test",
+        json={"city": "Delhi", "tier": "warning", "lead_time_hours": 1.0},
+        headers={"X-Admin-Token": settings.ADMIN_TOKEN},
+    )
+    assert res_admin.status_code == 200
+    data = res_admin.json()
+    assert "alert" in data
+    assert data["alert"]["is_test"] is True
+    assert data["alert"]["tier"] == "warning"
+    assert data["alert"]["city"] == "Delhi"
+    assert "TEST — DRILL" in data["alert"]["message"]
+
+
+# ==============================================================================
+# 9. HORIZON BOUNDARY, INDICES 200 & DELETION OF SIMPLE VECTOR BUILDER TESTS
+# ==============================================================================
+
+def test_horizon_boundary_returns_clean_error_on_missing_data(client, monkeypatch):
+    """
+    Test 3a:
+    When current hour is at start/end of the time array and future hours for lead 6
+    are missing, the service must return a clean 503 error ('Insufficient data to compute nowcast for this hour')
+    without crashing (500) or silently falling back to an unverified feature pipeline.
+    """
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    now_str = now.strftime("%Y-%m-%dT%H:00")
+
+    # 1. Payload with current hour at start and no future hours for lead 6 (only 1 hour)
+    payload_start_only = {
+        "latitude": 28.61,
+        "longitude": 77.21,
+        "utc_offset_seconds": 19800,
+        "timezone": "Asia/Kolkata",
+        "current": {"temperature_2m": 30.0, "weather_code": 1},
+        "hourly": {
+            "time": [now_str],
+            "temperature_2m": [30.0],
+            "relative_humidity_2m": [60.0],
+            "dew_point_2m": [20.0],
+            "surface_pressure": [1005.0],
+            "wind_speed_10m": [5.0],
+            "wind_direction_10m": [100],
+            "cloud_cover": [25],
+            "precipitation": [0.0],
+            "precipitation_probability": [0],
+            "cape": [1000.0],
+            "convective_inhibition": [-10.0],
+            "total_column_integrated_water_vapour": [40.0],
+            "weather_code": [1],
+        },
+    }
+
+    async def mock_get_start(self, url, params=None):
+        return httpx.Response(200, json=payload_start_only, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", mock_get_start)
+
+    # Lead 6 exceeds available horizon -> clean 503
+    res_lead6 = client.get("/api/v1/predictions/nowcast?lat=28.61&lon=77.21&lead_hours=6")
+    assert res_lead6.status_code == 503
+    assert res_lead6.json()["detail"] == "Insufficient data to compute nowcast for this hour"
+
+    # Lead 0 with no previous hours uses safe zero/default lags without crashing or fallback
+    res_lead0 = client.get("/api/v1/predictions/nowcast?lat=28.61&lon=77.21&lead_hours=0")
+    assert res_lead0.status_code == 200
+    assert len(res_lead0.json()["predictions"]) == 1
+
+    # 2. Payload with current hour at end of array (24 past hours, 0 future hours)
+    past_times = [(now - timedelta(hours=23 - h)).strftime("%Y-%m-%dT%H:00") for h in range(24)]
+    payload_end_only = {
+        "latitude": 28.61,
+        "longitude": 77.21,
+        "utc_offset_seconds": 19800,
+        "timezone": "Asia/Kolkata",
+        "current": {"temperature_2m": 30.0, "weather_code": 1},
+        "hourly": {
+            "time": past_times,
+            "temperature_2m": [30.0] * 24,
+            "relative_humidity_2m": [60.0] * 24,
+            "dew_point_2m": [20.0] * 24,
+            "surface_pressure": [1005.0] * 24,
+            "wind_speed_10m": [5.0] * 24,
+            "wind_direction_10m": [100] * 24,
+            "cloud_cover": [25] * 24,
+            "precipitation": [0.0] * 24,
+            "precipitation_probability": [0] * 24,
+            "cape": [1000.0] * 24,
+            "convective_inhibition": [-10.0] * 24,
+            "total_column_integrated_water_vapour": [40.0] * 24,
+            "weather_code": [1] * 24,
+        },
+    }
+
+    async def mock_get_end(self, url, params=None):
+        return httpx.Response(200, json=payload_end_only, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", mock_get_end)
+
+    # Lead 6 exceeds available horizon -> clean 503
+    res_lead6_end = client.get("/api/v1/predictions/nowcast?lat=28.61&lon=77.21&lead_hours=6")
+    assert res_lead6_end.status_code == 503
+    assert res_lead6_end.json()["detail"] == "Insufficient data to compute nowcast for this hour"
+
+
+def test_weather_indices_never_returns_500_for_valid_payload(client, monkeypatch):
+    """
+    Test 3b:
+    GET /weather/indices must return 200 with valid derived thermodynamic indices
+    and never return 500 when provided with a valid Open-Meteo payload.
+    """
+    async def mock_get(self, url, params=None):
+        return httpx.Response(200, json=MOCK_OPEN_METEO_PAYLOAD, request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", mock_get)
+
+    response = client.get("/api/v1/weather/indices?lat=28.61&lon=77.21")
+    assert response.status_code == 200
+    data = response.json()
+    assert "derived_indices" in data
+    assert "cape_index_derived" in data["derived_indices"]
+    assert "cin_index_derived" in data["derived_indices"]
+    assert "pw_index_derived" in data["derived_indices"]
+    assert isinstance(data["derived_indices"]["cape_index_derived"], (int, float))
+
+
+def test_simple_vector_builder_completely_deleted():
+    """
+    Test 3c:
+    Assert that the unverified simple-vector fallback builder is completely deleted
+    from FeatureEngineer and cannot be invoked by any prediction code path.
+    """
+    assert not hasattr(FeatureEngineer, "build_feature_vector_simple"), (
+        "FeatureEngineer.build_feature_vector_simple must be completely deleted."
+    )
+    assert not hasattr(FeatureEngineer, "build_feature_vector_fast"), (
+        "FeatureEngineer.build_feature_vector_fast must be deleted."
+    )
+
+
 

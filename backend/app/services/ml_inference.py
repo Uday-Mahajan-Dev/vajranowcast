@@ -59,13 +59,11 @@ class NowcastingService:
                     target_hour_index=target_hour_index,
                 )
             except Exception as e:
-                logger.warning(f"Error building full feature vector: {e}. Falling back to simple vector.")
-                features, row_dt_ist = self.feature_engineer.build_feature_vector_simple(
-                    weather_data=weather_data,
-                    lat=lat,
-                    lon=lon,
-                    timestamp=now,
-                    hour_index=target_hour_index,
+                logger.error(f"Error building canonical feature vector for ({lat}, {lon}) lead +{lead_hour}h: {e}")
+                from fastapi import HTTPException, status
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Insufficient data to compute nowcast for this hour",
                 )
 
             # Predict base probability and dynamic confidence from unscaled features
@@ -194,14 +192,9 @@ class NowcastingService:
                         timestamp=now,
                         target_hour_index=target_hour_index,
                     )
-                except Exception:
-                    features, row_dt_ist = self.feature_engineer.build_feature_vector_simple(
-                        weather_data=weather_data,
-                        lat=lat,
-                        lon=lon,
-                        timestamp=now,
-                        hour_index=target_hour_index,
-                    )
+                except Exception as e:
+                    logger.error(f"Error building feature vector for city {city_name} lead +{lead_hour}h: {e}")
+                    continue
 
                 ts_prob, ts_conf, _ = self.ts_model.predict(features)
                 lead_factor = max(0.60, 1.0 - (lead_hour / 6.0) * 0.40)

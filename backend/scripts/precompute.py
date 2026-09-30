@@ -155,14 +155,9 @@ async def run_precomputation(output_dir: Path) -> bool:
                 timestamp=now,
                 target_hour_index=1,
             )
-        except Exception:
-            features, _ = fe.build_feature_vector_simple(
-                weather_data=weather,
-                lat=lat,
-                lon=lon,
-                timestamp=now,
-                hour_index=1,
-            )
+        except Exception as e:
+            logger.error(f"Failed to build canonical feature vector for grid point ({lat}, {lon}): {e}")
+            continue
 
         ts_prob, ts_conf, _ = ts_model.predict(features)
         lt_prob, _ = lt_model.predict(features, ts_prob)
@@ -217,8 +212,9 @@ async def run_precomputation(output_dir: Path) -> bool:
             h_idx = int(lead_h)
             try:
                 feats, row_dt_ist = fe.build_feature_vector(weather, c_lat, c_lon, now, h_idx)
-            except Exception:
-                feats, row_dt_ist = fe.build_feature_vector_simple(weather, c_lat, c_lon, now, h_idx)
+            except Exception as e:
+                logger.error(f"Failed to build canonical feature vector for city {c_name} lead +{lead_h}h: {e}")
+                continue
 
             p_ts, conf_ts, _ = ts_model.predict(feats)
             p_lt, _ = lt_model.predict(feats, p_ts)

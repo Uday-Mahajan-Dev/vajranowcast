@@ -21,6 +21,7 @@ from app.models.schemas import (
 )
 from app.services.data_ingestion import OpenMeteoService
 from app.services.feature_engineering import FeatureEngineer
+from app.services.training_features import build_features_from_raw_slice
 from app.services.ml_inference import NowcastingService
 from app.ml.models.thunderstorm_model import (
     LightningPredictor,
@@ -164,6 +165,11 @@ async def get_model_info():
             "method": "rule-based heuristic",
             "formula": "round(min(ts_prob * 0.90, 0.99), 4)",
             "description": "Monotonic function of thunderstorm probability ensuring lightning never exceeds storm probability.",
+        },
+        "alert_tiers": {
+            "watch": settings.ALERT_TIER_WATCH,
+            "advisory": settings.ALERT_TIER_ADVISORY,
+            "warning": settings.ALERT_TIER_WARNING,
         },
         "severity_bands": {
             "method": "purely P(TS)-dependent threshold calibration",
@@ -326,6 +332,11 @@ async def list_historical_replays():
                             source_url=d.get("source_url", ""),
                             computed_verdict=d.get("computed_verdict"),
                             verified_by_human=d.get("verified_by_human", False),
+                            optimal_threshold=d.get("optimal_threshold", 0.186),
+                            features_vector=d.get("features_vector"),
+                            prediction=d.get("prediction"),
+                            actual_outcome=d.get("actual_outcome"),
+                            timeline=d.get("timeline"),
                         )
                     )
             except Exception as e:
@@ -421,12 +432,12 @@ async def get_historical_verification(
 
         feature_eng = FeatureEngineer()
         target_time = datetime.fromisoformat(f"{date}T{hour:02d}:00:00")
-        features = feature_eng.build_feature_vector_simple(
-            weather_data=weather_data,
-            lat=snapped_lat,
-            lon=snapped_lon,
-            timestamp=target_time,
-            hour_index=hour,
+        features = build_features_from_raw_slice(
+            raw_hourly=weather_data.get("hourly", {}),
+            target_idx=hour,
+            original_lat=snapped_lat,
+            original_lon=snapped_lon,
+            target_time=target_time,
         )
 
         ts_model = ThunderstormClassifier()

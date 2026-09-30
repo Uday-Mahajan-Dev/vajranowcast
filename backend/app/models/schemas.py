@@ -55,6 +55,8 @@ class AlertResponse(BaseModel):
     longitude: float
     alert_type: str
     severity: SeverityLevel
+    tier: Optional[str] = None  # "watch", "advisory", "warning"
+    is_test: bool = False
     thunderstorm_probability: float
     lightning_probability: float
     valid_from: datetime
@@ -62,6 +64,13 @@ class AlertResponse(BaseModel):
     message: str
     is_active: bool
     disclaimer: str = DEFAULT_DISCLAIMER
+
+
+class TestAlertRequest(BaseModel):
+    """Staff payload to create a drill/test alert."""
+    city: str
+    tier: str = "warning"  # "watch", "advisory", "warning"
+    lead_time_hours: float = 1.0
 
 
 class NowcastResponse(BaseModel):
@@ -136,3 +145,8 @@ class HistoricalReplayEvent(BaseModel):
     source_url: str
     computed_verdict: Optional[str] = None
     verified_by_human: bool = False
+    optimal_threshold: Optional[float] = 0.186
+    features_vector: Optional[dict] = None
+    prediction: Optional[dict] = None
+    actual_outcome: Optional[dict] = None
+    timeline: Optional[list[dict]] = None

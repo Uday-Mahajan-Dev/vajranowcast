@@ -68,23 +68,24 @@ class Settings(BaseSettings):
     CACHE_TTL_MINUTES: int = 15
 
     # =========================================================================
-    # Unified Prediction & Alert Thresholds
+    # Unified Prediction & 3-Tier Alert Thresholds
     # =========================================================================
     # OPTIMAL_THRESHOLD (0.1860):
     #   Statistical ML decision boundary tuned via Precision-Recall curve F1-score
-    #   maximization on Colab validation set. Given extreme class imbalance (~1.5%
-    #   positive thunderstorm prevalence), standard 0.50 cutoff fails. P(TS) >= 0.1860
-    #   statistically signifies a positive convective storm prediction (Hit vs Miss).
+    #   maximization on Colab validation set. P(TS) >= 0.1860 signifies a positive storm prediction.
     OPTIMAL_THRESHOLD: float = 0.1860
 
-    # ALERT_PROB_THRESHOLD (0.60):
-    #   Operational threshold for generating public severe weather alerts / banners.
-    #   Requires substantial convective probability (>60%) to prevent warning fatigue.
-    ALERT_PROB_THRESHOLD: float = 0.60
+    # 3 Alert Tiers:
+    #   WATCH (>= 0.30): Convective storm conditions developing (8.9 alerts/city-mo, 47.3% precision)
+    #   ADVISORY (>= 0.40): Heavy rain / localized downpour likely (6.4 alerts/city-mo, 51.2% precision)
+    #   WARNING (>= 0.60): High-confidence severe convective storm expected (0.3 alerts/city-mo, 76.9% precision)
+    ALERT_TIER_WATCH: float = 0.30
+    ALERT_TIER_ADVISORY: float = 0.40
+    ALERT_TIER_WARNING: float = 0.60
 
-    # SEVERE_PROB_THRESHOLD (0.75):
-    #   High-confidence threshold triggering severe/critical storm advisories.
-    SEVERE_PROB_THRESHOLD: float = 0.75
+    # Backward compatibility alias (minimum probability to generate any alert tier)
+    ALERT_PROB_THRESHOLD: float = 0.30
+    SEVERE_PROB_THRESHOLD: float = 0.60
 
     # Rate Limiting
     RATE_LIMIT_NOWCAST: str = "60/hour"
