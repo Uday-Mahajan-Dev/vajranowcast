@@ -57,6 +57,14 @@ class Settings(BaseSettings):
     GFS_NOMADS_URL: str = "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl"
     GITHUB_PAGES_BASE_URL: str = ""  # e.g. "https://uday-mahajan-dev.github.io/vajranowcast"
 
+    # Shared Open-Meteo Query Parameter Spec
+    OPEN_METEO_PARAMS_SPEC: dict = {
+        "hourly": "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code",
+        "forecast_days": 2,
+        "past_days": 1,
+        "timezone": "Asia/Kolkata",
+    }
+
     # India geographic boundaries
     INDIA_LAT_MIN: float = 6.0
     INDIA_LAT_MAX: float = 38.0

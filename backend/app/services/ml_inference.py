@@ -27,23 +27,23 @@ class NowcastingService:
         self.lt_model = LightningPredictor()
         self.severity = SeverityClassifier()
 
-    async def predict_for_location(
+    async def predict_from_weather_data(
         self,
+        weather_data: Dict[str, Any],
         lat: float,
         lon: float,
         lead_hours: Optional[List[float]] = None,
-        force_refresh: bool = False,
+        is_stale: bool = False,
+        cached_at: Optional[datetime] = None,
+        stale_reason: Optional[str] = None,
     ) -> List[ThunderstormPrediction]:
         """
-        Generate thunderstorm and lightning nowcast predictions for specified lead times.
-        Defaults to [0, 1, 2, 3, 6] hour lead times.
+        Generate thunderstorm and lightning predictions directly from Open-Meteo weather JSON.
+        Used by both server-side /nowcast and client-driven /nowcast-from-data.
         """
         if lead_hours is None:
             lead_hours = [0.0, 1.0, 2.0, 3.0, 6.0]
 
-        weather_data, is_stale, cached_at, stale_reason = await self.data_service.fetch_current_weather(
-            lat, lon, force_refresh=force_refresh
-        )
         now = datetime.now(timezone.utc)
         results: List[ThunderstormPrediction] = []
 
@@ -146,6 +146,30 @@ class NowcastingService:
             results.append(pred)
 
         return results
+
+    async def predict_for_location(
+        self,
+        lat: float,
+        lon: float,
+        lead_hours: Optional[List[float]] = None,
+        force_refresh: bool = False,
+    ) -> List[ThunderstormPrediction]:
+        """
+        Generate thunderstorm and lightning nowcast predictions for specified lead times.
+        Defaults to [0, 1, 2, 3, 6] hour lead times.
+        """
+        weather_data, is_stale, cached_at, stale_reason = await self.data_service.fetch_current_weather(
+            lat, lon, force_refresh=force_refresh
+        )
+        return await self.predict_from_weather_data(
+            weather_data=weather_data,
+            lat=lat,
+            lon=lon,
+            lead_hours=lead_hours,
+            is_stale=is_stale,
+            cached_at=cached_at,
+            stale_reason=stale_reason,
+        )
 
     async def predict_for_cities(
         self,

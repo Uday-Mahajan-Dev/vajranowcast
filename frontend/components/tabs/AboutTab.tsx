@@ -119,6 +119,9 @@ export const AboutTab: React.FC<AboutTabProps> = ({
         <h3 className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
           <Database className="h-3.5 w-3.5" /> Meteorological Data Feeds
         </h3>
+        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Live data is fetched by your browser from Open-Meteo. Regional grids and city overviews are precomputed hourly.
+        </p>
         <div className="space-y-1.5">
           {displaySources.map((src) => (
             <div

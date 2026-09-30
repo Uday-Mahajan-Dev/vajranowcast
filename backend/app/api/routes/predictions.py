@@ -10,6 +10,7 @@ from app.config import settings
 from app.core.cache import meteo_cache
 from app.core.limiter import limiter
 from app.models.schemas import (
+    ClientOpenMeteoPayload,
     DEFAULT_DISCLAIMER,
     GridPointPrediction,
     GridResponse,
@@ -110,6 +111,7 @@ async def get_nowcast(
             "model_version": f"{settings.APP_VERSION}-calibrated-hgbc",
             "model_type": "HistGradientBoostingClassifier + CalibratedClassifierCV",
             "data_sources": ["Open-Meteo Forecast API"],
+            "data_fetched_by": "server",
             "optimal_threshold": settings.OPTIMAL_THRESHOLD,
             "decision_rule": f"P(TS) >= {settings.OPTIMAL_THRESHOLD} signifies high storm threat",
             "target_description": "probability of heavy warm convective rainfall (>2 mm/h with warm, humid conditions) in the next hour, used as a thunderstorm proxy",
@@ -132,6 +134,90 @@ async def get_nowcast(
         raise
     except Exception as e:
         logger.error(f"Error generating nowcast for ({lat}, {lon}): {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal nowcasting engine error.")
+
+
+@router.post("/nowcast-from-data", response_model=NowcastResponse)
+@limiter.limit(settings.RATE_LIMIT_NOWCAST)
+async def get_nowcast_from_data(
+    request: Request,
+    payload: ClientOpenMeteoPayload,
+    lead_hours: str = Query("0,1,2,3,6", description="Comma-separated lead times in hours (allowed: 0,1,2,3,6)"),
+):
+    """
+    Generate thunderstorm and lightning nowcasts from raw Open-Meteo JSON fetched directly by client browser.
+    Runs the exact same parity-validated training_features.py pipeline and ML model with zero server-side upstream calls.
+    Enforces strict Pydantic range validation and a 64 KB request payload limit.
+    """
+    try:
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > 65536:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Payload exceeds maximum allowed size (64 KB).",
+            )
+
+        lat = payload.latitude
+        lon = payload.longitude
+        snapped_lat = snap_to_grid(lat)
+        snapped_lon = snap_to_grid(lon)
+
+        try:
+            raw_hours = [float(h.strip()) for h in lead_hours.split(",") if h.strip()]
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid lead_hours format. Must be comma-separated numbers.",
+            )
+
+        if not raw_hours:
+            raw_hours = [0.0, 1.0, 2.0, 3.0, 6.0]
+
+        if len(raw_hours) > 5:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At most 5 lead_hours values are allowed per request.",
+            )
+
+        invalid_leads = [h for h in raw_hours if h not in ALLOWED_LEAD_HOURS]
+        if invalid_leads:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid lead_hours {invalid_leads}. Allowed values are: {sorted(list(ALLOWED_LEAD_HOURS))}.",
+            )
+
+        nowcaster = NowcastingService()
+        weather_dict = payload.model_dump()
+        predictions = await nowcaster.predict_from_weather_data(weather_dict, lat, lon, raw_hours)
+
+        now = datetime.now(timezone.utc)
+        metadata = {
+            "model_version": f"{settings.APP_VERSION}-calibrated-hgbc",
+            "model_type": "HistGradientBoostingClassifier + CalibratedClassifierCV",
+            "data_sources": ["Open-Meteo Forecast API (Client Direct)"],
+            "data_fetched_by": "client",
+            "optimal_threshold": settings.OPTIMAL_THRESHOLD,
+            "decision_rule": f"P(TS) >= {settings.OPTIMAL_THRESHOLD} signifies high storm threat",
+            "target_description": "probability of heavy warm convective rainfall (>2 mm/h with warm, humid conditions) in the next hour, used as a thunderstorm proxy",
+            "thermodynamic_indices_description": "Empirical thermodynamic approximations derived from surface temperature, dewpoint, and surface pressure using Bolton (1980) formulas; not NWP sounding integrations",
+            "features_count": 24,
+            "target_lead_time": "t+1 hour",
+            "confidence_formula": "base_confidence * max(0.60, 1.0 - (lead_hours / 6.0) * 0.40)",
+            "snapped_coordinates": {"latitude": snapped_lat, "longitude": snapped_lon},
+        }
+
+        return NowcastResponse(
+            request_time=now,
+            predictions=predictions,
+            metadata=metadata,
+            stale=False,
+            cached_at=now,
+            disclaimer=DEFAULT_DISCLAIMER,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating nowcast from client data for ({payload.latitude}, {payload.longitude}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal nowcasting engine error.")
 
 
@@ -197,20 +283,68 @@ async def get_model_info():
 @limiter.limit(settings.RATE_LIMIT_CITIES)
 async def get_cities_nowcast(request: Request):
     """
-    Get nowcasts for 10 major Indian metropolitan hubs using a single batched HTTP call and 15-minute TTL caching.
+    Get precomputed nowcasts for 10 major Indian metropolitan hubs.
+    Served from in-memory cache / GitHub Pages / local precomputed data without calling Open-Meteo on Render.
     """
-    try:
-        nowcaster = NowcastingService()
-        results = await nowcaster.predict_for_cities(INDIAN_CITIES)
+    # 1. Check in-memory cache first
+    cached = meteo_cache.get_cities_nowcast()
+    if cached is not None:
+        data, is_stale, cached_at = cached
         return {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "cities_count": len(INDIAN_CITIES),
-            "cities": results,
+            "timestamp": cached_at.isoformat() if cached_at else datetime.now(timezone.utc).isoformat(),
+            "cities_count": len(data),
+            "cities": data,
             "disclaimer": DEFAULT_DISCLAIMER,
         }
-    except Exception as e:
-        logger.error(f"Error fetching city nowcasts: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal city nowcast processing error.")
+
+    # 2. Try fetching from GitHub Pages CDN
+    if settings.GITHUB_PAGES_BASE_URL:
+        cdn_url = f"{settings.GITHUB_PAGES_BASE_URL.rstrip('/')}/cities_latest.json"
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                res = await client.get(cdn_url)
+                if res.status_code == 200:
+                    payload = res.json()
+                    cities_dict = payload.get("cities", {})
+                    meteo_cache.set_cities_nowcast(cities_dict)
+                    return {
+                        "timestamp": payload.get("generated_at", datetime.now(timezone.utc).isoformat()),
+                        "cities_count": len(cities_dict),
+                        "cities": cities_dict,
+                        "disclaimer": payload.get("disclaimer", DEFAULT_DISCLAIMER),
+                    }
+        except Exception as e:
+            logger.warning(f"Could not fetch cities from Pages CDN ({cdn_url}): {e}")
+
+    # 3. Fallback to local files
+    local_cities_file = DATA_DIR / "cities_latest.json"
+    if not local_cities_file.exists():
+        local_cities_file = Path(__file__).resolve().parent.parent.parent.parent / "frontend" / "public" / "data" / "cities_latest.json"
+
+    if local_cities_file.exists():
+        try:
+            with open(local_cities_file, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+                cities_dict = payload.get("cities", {})
+                meteo_cache.set_cities_nowcast(cities_dict)
+                return {
+                    "timestamp": payload.get("generated_at", datetime.now(timezone.utc).isoformat()),
+                    "cities_count": len(cities_dict),
+                    "cities": cities_dict,
+                    "disclaimer": payload.get("disclaimer", DEFAULT_DISCLAIMER),
+                }
+        except Exception as e:
+            logger.warning(f"Could not load local cities file {local_cities_file}: {e}")
+
+    # 4. Fallback empty response
+    now_iso = datetime.now(timezone.utc).isoformat()
+    return {
+        "timestamp": now_iso,
+        "cities_count": len(INDIAN_CITIES),
+        "cities": {c["name"]: [] for c in INDIAN_CITIES},
+        "disclaimer": DEFAULT_DISCLAIMER,
+    }
 
 
 @router.get("/grid", response_model=GridResponse)
@@ -218,7 +352,7 @@ async def get_cities_nowcast(request: Request):
 async def get_precomputed_grid(request: Request):
     """
     Retrieve the latest precomputed regional thunderstorm and lightning nowcast grid across India.
-    Served from 10-minute in-memory cache with fallback to GitHub Pages CDN or last known good memory state (up to 3h max).
+    Served from 10-minute in-memory cache with fallback to GitHub Pages CDN or local file (no Open-Meteo calls on Render).
     """
     # 1. Check in-memory cache first
     cached = meteo_cache.get_grid()
@@ -246,7 +380,7 @@ async def get_precomputed_grid(request: Request):
             resolution_deg=data.get("resolution_deg", 1.6),
             grid_resolution_km=data.get("grid_resolution_km", 175.0),
             stale=is_stale,
-            stale_reason="Served from 3-hour memory cache" if is_stale else None,
+            stale_reason="Served from memory cache" if is_stale else None,
             points=points,
             disclaimer=data.get("disclaimer", DEFAULT_DISCLAIMER),
         )
@@ -290,7 +424,45 @@ async def get_precomputed_grid(request: Request):
         except Exception as e:
             logger.warning(f"Could not fetch grid from Pages CDN ({cdn_url}): {e}")
 
-    # 3. Fallback: Clean empty grid response if no data has been cached yet
+    # 3. Fallback to local file if available
+    local_grid_file = GRID_FILE
+    if not local_grid_file.exists():
+        local_grid_file = Path(__file__).resolve().parent.parent.parent.parent / "frontend" / "public" / "data" / "grid_latest.json"
+
+    if local_grid_file.exists():
+        try:
+            with open(local_grid_file, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+                points = [
+                    GridPointPrediction(
+                        latitude=p["latitude"],
+                        longitude=p["longitude"],
+                        thunderstorm_probability=p.get("thunderstorm_probability", 0.0),
+                        severity=SeverityLevel(p.get("severity", "none")),
+                        lightning_probability=p.get("lightning_probability", 0.0),
+                        confidence=p.get("confidence", 0.0),
+                        cape=p.get("cape", 0.0),
+                        cin=p.get("cin", 0.0),
+                        precipitable_water=p.get("precipitable_water", 0.0),
+                    )
+                    for p in payload.get("points", [])
+                ]
+                return GridResponse(
+                    generated_at=datetime.fromisoformat(payload["generated_at"]) if isinstance(payload["generated_at"], str) else payload["generated_at"],
+                    valid_until=datetime.fromisoformat(payload["valid_until"]) if isinstance(payload["valid_until"], str) else payload["valid_until"],
+                    lead_time_hours=payload.get("lead_time_hours", 1.0),
+                    total_points=len(points),
+                    resolution_deg=payload.get("resolution_deg", 1.6),
+                    grid_resolution_km=payload.get("grid_resolution_km", 175.0),
+                    stale=False,
+                    stale_reason=None,
+                    points=points,
+                    disclaimer=payload.get("disclaimer", DEFAULT_DISCLAIMER),
+                )
+        except Exception as e:
+            logger.warning(f"Could not load local grid file {local_grid_file}: {e}")
+
+    # 4. Fallback: Clean empty grid response
     now = datetime.now(timezone.utc)
     return GridResponse(
         generated_at=now,

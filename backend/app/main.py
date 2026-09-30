@@ -1,6 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
@@ -10,7 +10,7 @@ from app.api.auth import init_jwks
 from app.api.routes import alerts, predictions, weather
 from app.config import settings
 from app.core.limiter import limiter
-from app.ml.models.thunderstorm_model import ThunderstormClassifier
+from app.ml.models.thunderstorm_model import get_thunderstorm_classifier
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("vajranowcast.main")
@@ -31,8 +31,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    classifier = ThunderstormClassifier()
-    logger.info(f"VajraNowcast v{settings.APP_VERSION} started. Model: {classifier.is_trained}, Threshold: {classifier.optimal_threshold}")
+    classifier = get_thunderstorm_classifier()
+    logger.info(
+        f"VajraNowcast v{settings.APP_VERSION} initialized. "
+        f"Model loaded: {classifier.is_trained}, Threshold: {classifier.optimal_threshold}"
+    )
     # Prefetch JWKS public keys asynchronously
     await init_jwks()
     yield
@@ -45,6 +48,13 @@ app = FastAPI(
     description="AI-powered thunderstorm and lightning nowcasting for India",
     lifespan=lifespan,
 )
+
+# Custom exception handler to serialize dict detail structures (e.g. 503 upstream_rate_limited)
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if isinstance(exc.detail, dict):
+        return JSONResponse(status_code=exc.status_code, content=exc.detail)
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 # Attach rate limiter to application state
 app.state.limiter = limiter
@@ -69,13 +79,14 @@ app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])
 
 @app.get("/health")
 async def health_check():
-    classifier = ThunderstormClassifier()
+    """Health check endpoint reporting stored application and model state without disk re-reads."""
+    classifier = get_thunderstorm_classifier()
     return {
         "status": "healthy",
         "service": "vajranowcast",
         "version": settings.APP_VERSION,
-        "model_loaded": classifier.is_trained,
-        "optimal_threshold": settings.OPTIMAL_THRESHOLD,
+        "model_loaded": bool(classifier.is_trained),
+        "optimal_threshold": float(classifier.optimal_threshold),
     }
 
 

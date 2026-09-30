@@ -621,13 +621,16 @@ def test_asia_kolkata_hourly_row_matching_and_lags(client, monkeypatch):
     assert abs(feats["hour_cos"] - (-0.8660254)) < 1e-5
 
 
-def test_cities_multi_location_response_timezone_matching(client, monkeypatch):
+@pytest.mark.asyncio
+async def test_cities_multi_location_response_timezone_matching(monkeypatch):
     """
     Test 6c:
-    Multi-location cities response must match the 14:00 IST row when called at 08:43 UTC.
+    Multi-location cities response in NowcastingService must match the 14:00 IST row when called at 08:43 UTC.
     """
     from datetime import timezone as dt_tz
     import app.services.ml_inference as ml_inf_mod
+    from app.api.routes.predictions import INDIAN_CITIES
+    from app.services.ml_inference import NowcastingService
 
     time_arr = (
         [f"2026-09-28T{h:02d}:00" for h in range(24)] +
@@ -677,12 +680,10 @@ def test_cities_multi_location_response_timezone_matching(client, monkeypatch):
 
     monkeypatch.setattr(ml_inf_mod, "datetime", MockDatetime)
 
-    response = client.get("/api/v1/predictions/nowcast/cities")
-    assert response.status_code == 200
-    data = response.json()
-    assert "cities" in data
+    nowcaster = NowcastingService()
+    data = await nowcaster.predict_for_cities(INDIAN_CITIES, force_refresh=True)
 
-    for city_name, city_preds in data["cities"].items():
+    for city_name, city_preds in data.items():
         assert len(city_preds) == 5
         lead0 = city_preds[0]
         assert lead0["input_time_ist"] == "2026-09-29T14:00:00+05:30"
@@ -690,6 +691,7 @@ def test_cities_multi_location_response_timezone_matching(client, monkeypatch):
         lead6 = city_preds[4]
         assert lead6["input_time_ist"] == "2026-09-29T20:00:00+05:30"
         assert lead6["input_conditions"]["temperature_2m"] == 220.0
+
 
 
 def test_alert_tiers_classification_and_messages():

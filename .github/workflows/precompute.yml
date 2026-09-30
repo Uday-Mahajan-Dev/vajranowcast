@@ -45,6 +45,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          RENDER_BACKEND_URL: ${{ secrets.RENDER_BACKEND_URL }}
         run: |
           python scripts/precompute.py --output-dir public_pages
 

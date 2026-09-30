@@ -245,6 +245,16 @@ export const MAP_STYLES: Record<MapStyleId, MapStyleConfig> = {
 // Open-Meteo Geocoding URL with verified countryCode=IN parameter
 export const GEOCODING_API_URL = "https://geocoding-api.open-meteo.com/v1/search";
 
+// Shared Open-Meteo Query Parameter Spec (matches backend OPEN_METEO_PARAMS_SPEC exactly)
+export const OPEN_METEO_PARAMS_SPEC = {
+  hourly: "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code",
+  forecast_days: 2,
+  past_days: 1,
+  timezone: "Asia/Kolkata",
+} as const;
+
+export const OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+
 // Full Map Attributions
 export const MAP_ATTRIBUTIONS = [
   "© OpenStreetMap contributors",
@@ -254,3 +264,4 @@ export const MAP_ATTRIBUTIONS = [
   "Weather data: Open-Meteo (CC BY 4.0)",
   "Model: VajraNowcast v1.1.0",
 ];
+

@@ -59,15 +59,37 @@ class LightningPredictor:
         return round(lightning_prob, 4), confidence
 
 
+_global_classifier = None
+
+
+def get_thunderstorm_classifier() -> "ThunderstormClassifier":
+    """Retrieve global singleton ThunderstormClassifier instance."""
+    global _global_classifier
+    if _global_classifier is None:
+        _global_classifier = ThunderstormClassifier()
+    return _global_classifier
+
+
 class ThunderstormClassifier:
     """Calibrated ML classifier with integrity verification and rule-based fallback for thunderstorm nowcasting."""
 
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(ThunderstormClassifier, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self):
+        if getattr(self, "_initialized", False):
+            return
         self.model = None
         self.scaler = None
         self.feature_columns = None
         self.optimal_threshold = settings.OPTIMAL_THRESHOLD
         self.is_trained = False
+        self._initialized = True
 
         self._load_artifacts()
 

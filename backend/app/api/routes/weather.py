@@ -44,6 +44,8 @@ async def get_current_weather(
             "stale_reason": stale_reason,
             "disclaimer": DEFAULT_DISCLAIMER,
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error fetching current weather for ({lat}, {lon}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal weather observation service error.")
@@ -65,7 +67,9 @@ async def get_atmospheric_indices(
         snapped_lon = snap_to_grid(lon)
 
         data_service = OpenMeteoService()
-        raw_data, is_stale, cached_at, stale_reason = await data_service.fetch_current_weather(snapped_lat, snapped_lon)
+        raw_data, is_stale, cached_at, stale_reason = await data_service.fetch_current_weather(
+            snapped_lat, snapped_lon, include_nwp_indices=True
+        )
 
         feature_eng = FeatureEngineer()
         features, row_dt_ist = feature_eng.build_feature_vector(
@@ -116,6 +120,8 @@ async def get_atmospheric_indices(
             },
             "disclaimer": DEFAULT_DISCLAIMER,
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error computing atmospheric indices for ({lat}, {lon}): {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal atmospheric index calculation error.")

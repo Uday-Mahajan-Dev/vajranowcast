@@ -268,7 +268,72 @@ async def run_precomputation(output_dir: Path) -> bool:
     atomic_write_json(output_dir / "alerts_latest.json", alerts_payload)
 
     logger.info(f"Successfully published precomputed artifacts to {output_dir}")
+
+    # 5. If backend URL and Admin Token are provided, wake Render and post precomputed alerts
+    if backend_url and admin_token:
+        logger.info(f"Triggering Render alert generation at {backend_url}...")
+        await wake_render_and_generate_alerts(backend_url, admin_token, cities_payload)
+
     return True
+
+
+async def wake_render_and_generate_alerts(
+    backend_url: str,
+    admin_token: str,
+    cities_payload: dict,
+) -> bool:
+    """
+    Ping /health on Render (up to 3 retries, 30s apart) to wake sleeping instance,
+    then POST precomputed city predictions with X-Admin-Token to /api/v1/alerts/generate.
+    """
+    health_url = f"{backend_url.rstrip('/')}/health"
+    generate_url = f"{backend_url.rstrip('/')}/api/v1/alerts/generate"
+
+    logger.info(f"Connecting to Render backend at {backend_url}...")
+    async with httpx.AsyncClient(timeout=45.0) as client:
+        # Step 1: Health check retry loop (wake-up)
+        healthy = False
+        for attempt in range(1, 4):
+            try:
+                logger.info(f"Health check attempt {attempt}/3 at {health_url}...")
+                resp = await client.get(health_url)
+                if resp.status_code == 200:
+                    logger.info("Render backend is awake and healthy.")
+                    healthy = True
+                    break
+                else:
+                    logger.warning(f"Health check returned status {resp.status_code}")
+            except Exception as e:
+                logger.warning(f"Health check attempt {attempt} failed: {e}")
+
+            if attempt < 3:
+                logger.info("Waiting 30 seconds for Render instance to spin up...")
+                await asyncio.sleep(30)
+
+        if not healthy:
+            logger.error("Render backend did not respond to health checks. Cannot post alerts.")
+            return False
+
+        # Step 2: POST precomputed city predictions
+        headers = {
+            "Content-Type": "application/json",
+            "X-Admin-Token": admin_token,
+        }
+        body = {
+            "cities": cities_payload.get("cities", {}),
+        }
+        try:
+            logger.info(f"Posting precomputed city predictions to {generate_url}...")
+            post_resp = await client.post(generate_url, json=body, headers=headers)
+            if post_resp.status_code == 200:
+                logger.info(f"Successfully triggered alert generation on Render: {post_resp.json()}")
+                return True
+            else:
+                logger.error(f"Alert generation failed with status {post_resp.status_code}: {post_resp.text}")
+                return False
+        except Exception as e:
+            logger.error(f"Failed to post alert generation request: {e}")
+            return False
 
 
 if __name__ == "__main__":
@@ -279,6 +344,19 @@ if __name__ == "__main__":
         default=str(backend_dir / "public_pages"),
         help="Target output directory for JSON artifacts",
     )
+    parser.add_argument(
+        "--backend-url",
+        type=str,
+        default=os.environ.get("RENDER_BACKEND_URL") or os.environ.get("BACKEND_URL") or os.environ.get("VAJRA_BACKEND_URL"),
+        help="Backend URL to wake and post precomputed alerts to",
+    )
+    parser.add_argument(
+        "--admin-token",
+        type=str,
+        default=os.environ.get("ADMIN_TOKEN") or os.environ.get("X_ADMIN_TOKEN"),
+        help="X-Admin-Token for authenticating alert generation",
+    )
     args = parser.parse_args()
-    success = asyncio.run(run_precomputation(Path(args.output_dir)))
+    success = asyncio.run(run_precomputation(Path(args.output_dir), args.backend_url, args.admin_token))
     sys.exit(0 if success else 1)
+

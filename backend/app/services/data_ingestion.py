@@ -5,12 +5,26 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
+from fastapi import HTTPException, status
 import httpx
 from app.config import settings
 from app.core.cache import meteo_cache, snap_coordinates
 from app.core.quota import quota_guard
 
 logger = logging.getLogger("vajranowcast.ingestion")
+
+# 9 canonical model variables (quota-optimized, no current= block)
+OPEN_METEO_MODEL_HOURLY_VARS = (
+    "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
+    "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code"
+)
+
+# Extended variables requested ONLY for /weather/indices
+OPEN_METEO_INDICES_HOURLY_VARS = (
+    "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
+    "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code,"
+    "precipitation_probability,cape,convective_inhibition,total_column_integrated_water_vapour"
+)
 
 
 class OpenMeteoService:
@@ -26,9 +40,11 @@ class OpenMeteoService:
         lat: float,
         lon: float,
         force_refresh: bool = False,
+        include_nwp_indices: bool = False,
     ) -> Tuple[Dict[str, Any], bool, Optional[datetime], Optional[str]]:
         """
-        Fetch real-time atmospheric conditions for a snapped location.
+        Fetch atmospheric conditions for a snapped location.
+        Quota-optimized: requests only the 9 model variables without current= block by default.
         Returns: (weather_data, is_stale, cached_at, stale_reason)
         """
         snapped_lat, snapped_lon = snap_coordinates(lat, lon)
@@ -49,25 +65,20 @@ class OpenMeteoService:
             if cached is not None:
                 data, _, cached_at = cached
                 return data, True, cached_at, f"Quota guard active: {reason}"
-            raise httpx.HTTPStatusError(
-                f"Rate limit / Quota threshold reached: {reason}",
-                request=httpx.Request("GET", self.forecast_url),
-                response=httpx.Response(429),
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "detail": "Weather data provider is busy for this server — try again shortly.",
+                    "code": "upstream_rate_limited",
+                },
             )
+
+        hourly_vars = OPEN_METEO_INDICES_HOURLY_VARS if include_nwp_indices else OPEN_METEO_MODEL_HOURLY_VARS
 
         params = {
             "latitude": snapped_lat,
             "longitude": snapped_lon,
-            "current": (
-                "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
-                "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code"
-            ),
-            "hourly": (
-                "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
-                "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,"
-                "precipitation_probability,cape,convective_inhibition,"
-                "total_column_integrated_water_vapour,weather_code"
-            ),
+            "hourly": hourly_vars,
             "forecast_days": 2,
             "past_days": 1,
             "timezone": "Asia/Kolkata",
@@ -76,13 +87,24 @@ class OpenMeteoService:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(self.forecast_url, params=params)
-                if response.status_code == 429:
-                    logger.warning(f"Received HTTP 429 from Open-Meteo for ({snapped_lat}, {snapped_lon}). Falling back to stale cache.")
+                
+                # Check for 429 or 5xx upstream errors
+                if response.status_code == 429 or response.status_code >= 500:
+                    snippet = response.text[:300] if hasattr(response, "text") else ""
+                    logger.warning(
+                        f"Open-Meteo returned HTTP {response.status_code} for ({snapped_lat}, {snapped_lon}): {snippet}"
+                    )
                     cached = meteo_cache.get_weather(snapped_lat, snapped_lon)
                     if cached is not None:
                         data, _, cached_at = cached
-                        return data, True, cached_at, "Upstream Open-Meteo returned 429 Too Many Requests"
-                    response.raise_for_status()
+                        return data, True, cached_at, f"Upstream Open-Meteo returned {response.status_code}"
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail={
+                            "detail": "Weather data provider is busy for this server — try again shortly.",
+                            "code": "upstream_rate_limited",
+                        },
+                    )
 
                 response.raise_for_status()
                 quota_guard.record_request(batch_weight=1)
@@ -95,13 +117,21 @@ class OpenMeteoService:
                 meteo_cache.set_weather(snapped_lat, snapped_lon, data)
                 return data, False, datetime.now(timezone.utc), None
 
+        except HTTPException:
+            raise
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             logger.error(f"Error communicating with Open-Meteo for ({snapped_lat}, {snapped_lon}): {e}")
             cached = meteo_cache.get_weather(snapped_lat, snapped_lon)
             if cached is not None:
                 data, _, cached_at = cached
                 return data, True, cached_at, f"Network error ({type(e).__name__}); served from fallback cache"
-            raise
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "detail": "Weather data provider is busy for this server — try again shortly.",
+                    "code": "upstream_rate_limited",
+                },
+            )
 
     async def fetch_batch_locations(
         self,
@@ -109,8 +139,6 @@ class OpenMeteoService:
     ) -> Tuple[List[Dict[str, Any]], bool, Optional[datetime], Optional[str]]:
         """
         Fetch atmospheric conditions for multiple locations in a single batched HTTP request.
-        Open-Meteo natively supports comma-separated coordinates:
-        latitude=lat1,lat2,lat3&longitude=lon1,lon2,lon3
         """
         if not locations:
             return [], False, datetime.now(timezone.utc), None
@@ -121,53 +149,67 @@ class OpenMeteoService:
         allowed, reason = quota_guard.can_make_request(batch_weight=1)
         if not allowed:
             logger.warning(f"Quota guard blocked batch request: {reason}")
-            raise httpx.HTTPStatusError(
-                f"Rate limit / Quota threshold reached: {reason}",
-                request=httpx.Request("GET", self.forecast_url),
-                response=httpx.Response(429),
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "detail": "Weather data provider is busy for this server — try again shortly.",
+                    "code": "upstream_rate_limited",
+                },
             )
 
         params = {
             "latitude": lats_str,
             "longitude": lons_str,
-            "current": (
-                "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
-                "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code"
-            ),
-            "hourly": (
-                "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
-                "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,"
-                "precipitation_probability,cape,convective_inhibition,"
-                "total_column_integrated_water_vapour,weather_code"
-            ),
+            "hourly": OPEN_METEO_MODEL_HOURLY_VARS,
             "forecast_days": 2,
             "past_days": 1,
             "timezone": "Asia/Kolkata",
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.get(self.forecast_url, params=params)
-            response.raise_for_status()
-            quota_guard.record_request(batch_weight=1)
-            raw_json = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(self.forecast_url, params=params)
+                if response.status_code == 429 or response.status_code >= 500:
+                    snippet = response.text[:300] if hasattr(response, "text") else ""
+                    logger.warning(f"Open-Meteo batch returned HTTP {response.status_code}: {snippet}")
+                    raise HTTPException(
+                        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail={
+                            "detail": "Weather data provider is busy for this server — try again shortly.",
+                            "code": "upstream_rate_limited",
+                        },
+                    )
 
-            # If multiple locations queried, Open-Meteo returns a list of dictionaries
-            if isinstance(raw_json, list):
-                results = raw_json
-            else:
-                results = [raw_json]
+                response.raise_for_status()
+                quota_guard.record_request(batch_weight=1)
+                raw_json = response.json()
 
-            # Post-process precipitable_water and cache individual points
-            now_dt = datetime.now(timezone.utc)
-            for idx, item in enumerate(results):
-                if "hourly" in item and "total_column_integrated_water_vapour" in item["hourly"]:
-                    item["hourly"]["precipitable_water"] = item["hourly"]["total_column_integrated_water_vapour"]
-                if idx < len(locations):
-                    lat = locations[idx]["latitude"]
-                    lon = locations[idx]["longitude"]
-                    meteo_cache.set_weather(lat, lon, item)
+                if isinstance(raw_json, list):
+                    results = raw_json
+                else:
+                    results = [raw_json]
 
-            return results, False, now_dt, None
+                now_dt = datetime.now(timezone.utc)
+                for idx, item in enumerate(results):
+                    if "hourly" in item and "total_column_integrated_water_vapour" in item["hourly"]:
+                        item["hourly"]["precipitable_water"] = item["hourly"]["total_column_integrated_water_vapour"]
+                    if idx < len(locations):
+                        lat = locations[idx]["latitude"]
+                        lon = locations[idx]["longitude"]
+                        meteo_cache.set_weather(lat, lon, item)
+
+                return results, False, now_dt, None
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error in batch location fetch: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "detail": "Weather data provider is busy for this server — try again shortly.",
+                    "code": "upstream_rate_limited",
+                },
+            )
 
     async def fetch_multiple_cities(
         self,
@@ -218,15 +260,22 @@ class OpenMeteoService:
             "longitude": snapped_lon,
             "start_date": date_str,
             "end_date": date_str,
-            "hourly": (
-                "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
-                "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code"
-            ),
+            "hourly": OPEN_METEO_MODEL_HOURLY_VARS,
             "timezone": "Asia/Kolkata",
         }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(self.archive_url, params=params)
+            if response.status_code == 429 or response.status_code >= 500:
+                snippet = response.text[:300] if hasattr(response, "text") else ""
+                logger.warning(f"Historical fetch returned HTTP {response.status_code}: {snippet}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail={
+                        "detail": "Weather data provider is busy for this server — try again shortly.",
+                        "code": "upstream_rate_limited",
+                    },
+                )
             response.raise_for_status()
             quota_guard.record_request(batch_weight=1)
             return response.json()

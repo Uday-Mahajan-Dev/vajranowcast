@@ -17,6 +17,7 @@ import {
   fetchCitiesNowcast,
   fetchActiveAlerts,
   fetchNowcast,
+  fetchNowcastWithClientFallback,
   fetchGrid,
   fetchHistoricalReplays,
   fetchModelInfo,
@@ -335,7 +336,12 @@ function HomePageContent() {
 
       setIsLoadingNowcast(true);
       try {
-        const pred = await fetchNowcast(place.lat, place.lon);
+        const pred = await fetchNowcastWithClientFallback(
+          place.lat,
+          place.lon,
+          [0, 1, 2, 3, 6],
+          abortControllerRef.current?.signal
+        );
         setNowcastData(pred);
         setCachedNowcast(place.lat, place.lon, pred);
       } catch (err: any) {

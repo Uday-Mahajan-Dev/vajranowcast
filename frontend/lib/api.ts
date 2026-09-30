@@ -16,7 +16,7 @@ import {
   NowcastResponse,
   DataSourceStatus,
 } from "./types";
-import { GEOCODING_API_URL, COVERAGE_BOUNDS } from "./constants";
+import { GEOCODING_API_URL, COVERAGE_BOUNDS, OPEN_METEO_PARAMS_SPEC, OPEN_METEO_FORECAST_URL } from "./constants";
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
@@ -97,6 +97,7 @@ async function fetchWithTimeout(
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let errorDetail = `Request failed with status ${res.status}`;
+    let errorCode: string | undefined;
     try {
       const errJson = await res.json();
       if (errJson.detail) {
@@ -106,14 +107,17 @@ async function handleResponse<T>(res: Response): Promise<T> {
           errorDetail = errJson.detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
         }
       }
+      if (errJson.code) {
+        errorCode = errJson.code;
+      }
     } catch {
       // Non-json response
     }
 
     if (res.status === 422) {
       throw new ApiError(`Validation error: ${errorDetail}`, 422);
-    } else if (res.status === 429) {
-      throw new ApiError("Too many requests, try again in a minute.", 429);
+    } else if (res.status === 429 || res.status === 503 || errorCode === "upstream_rate_limited") {
+      throw new ApiError("Weather provider busy, try again in a minute", res.status, { code: errorCode });
     } else if (res.status === 401) {
       throw new ApiError("Unauthorized. Please log in.", 401);
     } else if (res.status === 403) {
@@ -128,6 +132,76 @@ async function handleResponse<T>(res: Response): Promise<T> {
 // ----------------------------------------------------------------------
 // Prediction Endpoints
 // ----------------------------------------------------------------------
+
+/**
+ * Direct browser-side fetch of Open-Meteo data + backend feature pipeline execution.
+ * If browser Open-Meteo fetch fails (e.g. adblock / browser network issue),
+ * seamlessly falls back to server-side GET /api/v1/predictions/nowcast.
+ */
+export async function fetchNowcastWithClientFallback(
+  lat: number,
+  lon: number,
+  leadHours: number[] = [0, 1, 2, 3, 6],
+  signal?: AbortSignal,
+  onColdStart?: (isWaking: boolean) => void
+): Promise<NowcastResponse> {
+  const snappedLat = snapCoord(lat);
+  const snappedLon = snapCoord(lon);
+  const cacheKey = `${snappedLat.toFixed(2)}_${snappedLon.toFixed(2)}_${leadHours.join(",")}`;
+
+  const cached = nowcastMemoryCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  // 1. Try Browser Direct Open-Meteo Fetch
+  try {
+    const params = new URLSearchParams({
+      latitude: snappedLat.toString(),
+      longitude: snappedLon.toString(),
+      hourly: OPEN_METEO_PARAMS_SPEC.hourly,
+      forecast_days: OPEN_METEO_PARAMS_SPEC.forecast_days.toString(),
+      past_days: OPEN_METEO_PARAMS_SPEC.past_days.toString(),
+      timezone: OPEN_METEO_PARAMS_SPEC.timezone,
+    });
+
+    const openMeteoUrl = `${OPEN_METEO_FORECAST_URL}?${params.toString()}`;
+    const omRes = await fetch(openMeteoUrl, { signal });
+    if (omRes.ok) {
+      const rawOmData = await omRes.json();
+
+      // POST raw forecast payload to /api/v1/predictions/nowcast-from-data
+      const backendUrl = `${API_BASE_URL}/api/v1/predictions/nowcast-from-data?lead_hours=${leadHours.join(",")}`;
+      const backendRes = await fetchWithTimeout(
+        backendUrl,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(rawOmData),
+          signal,
+        },
+        70000,
+        onColdStart
+      );
+
+      if (backendRes.ok) {
+        const data = (await backendRes.json()) as NowcastResponse;
+        nowcastMemoryCache.set(cacheKey, { data, timestamp: Date.now() });
+        return data;
+      }
+    }
+  } catch (clientErr: any) {
+    if (clientErr?.name === "AbortError") {
+      throw clientErr;
+    }
+    console.warn("[VajraNowcast] Browser Open-Meteo fetch failed, falling back to server fetch:", clientErr);
+  }
+
+  // 2. Fallback to Server GET /api/v1/predictions/nowcast
+  return fetchNowcast(snappedLat, snappedLon, leadHours, signal, onColdStart);
+}
 
 export async function fetchNowcast(
   lat: number,
