@@ -32,7 +32,7 @@ def run_supabase_maintenance() -> bool:
 
     # 1. Keep-alive ping — this is the part that must succeed
     try:
-        res = supabase.table("alerts").select("id", count="exact").limit(1).execute()
+        res = supabase.table("alerts").select("*", count="exact").limit(1).execute()
         logger.info(f"[Keep-Alive] Ping successful. alerts row count: {res.count}")
     except Exception as e:
         logger.error(f"[Keep-Alive] Ping failed: {e}")
