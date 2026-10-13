@@ -3,6 +3,9 @@
 from typing import List, Union
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path   # add at the top
+
+    
 
 
 class Settings(BaseSettings):
@@ -72,7 +75,7 @@ class Settings(BaseSettings):
     INDIA_LON_MAX: float = 98.0
 
     # Model & Cache settings
-    MODEL_DIR: str = "./app/ml/saved_models"
+    MODEL_DIR: str = str(Path(__file__).resolve().parent / "ml" / "saved_models")
     CACHE_TTL_MINUTES: int = 15
 
     # =========================================================================
