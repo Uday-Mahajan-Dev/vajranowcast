@@ -3,7 +3,8 @@
 import React from "react";
 import { History, MapPin, ExternalLink, ShieldCheck, AlertCircle, RefreshCw, Calendar, CheckCircle2, XCircle } from "lucide-react";
 import { HistoricalReplayEvent } from "@/lib/types";
-import { DEFAULT_DISCLAIMER, OPTIMAL_THRESHOLD } from "@/lib/constants";
+import { DEFAULT_DISCLAIMER } from "@/lib/constants";
+import { useModelInfo } from "@/lib/useModelInfo";
 import { formatProbability } from "@/lib/utils";
 
 interface ReplaysTabProps {
@@ -21,6 +22,7 @@ export const ReplaysTab: React.FC<ReplaysTabProps> = ({
   onRetry,
   onSelectReplay,
 }) => {
+  const { optimalThreshold } = useModelInfo();
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -111,7 +113,7 @@ export const ReplaysTab: React.FC<ReplaysTabProps> = ({
                 <div className="mt-3 flex items-center justify-between border-t border-slate-200/50 pt-2 text-[11px] text-slate-400 dark:border-slate-800/60">
                   <div className="flex items-center gap-2">
                     <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                      Threshold {OPTIMAL_THRESHOLD}
+                      Threshold {(event.optimal_threshold ?? optimalThreshold).toFixed(3)}
                     </span>
                     {!event.verified_by_human && (
                       <span className="text-[10px] text-slate-400">

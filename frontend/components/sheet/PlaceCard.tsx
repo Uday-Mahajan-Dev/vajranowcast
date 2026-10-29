@@ -10,7 +10,9 @@ import {
   SEVERITY_CONFIG,
   DEFAULT_DISCLAIMER,
   getSeverityFromProbability,
+  ALERT_TIERS,
 } from "@/lib/constants";
+import { useModelInfo } from "@/lib/useModelInfo";
 import {
   formatProbability,
   formatISTTime,
@@ -73,6 +75,12 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isWhyOpen, setIsWhyOpen] = useState(false);
+  const { optimalThreshold: defaultOptimalThreshold } = useModelInfo();
+  const optimalThreshold =
+    typeof nowcastData?.metadata?.optimal_threshold === "number"
+      ? nowcastData.metadata.optimal_threshold
+      : defaultOptimalThreshold;
+  const thresholdPercent = (optimalThreshold * 100).toFixed(1);
 
   // Handle Share URL Copy
   const handleShare = () => {
@@ -190,12 +198,42 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
               </div>
 
               {/* Threat Severity Badge */}
-              <div
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${sevConfig.badgeClass}`}
-              >
-                {sevConfig.label}
-              </div>
+              {(() => {
+                const effectiveTier = activePred.display_tier || (activePred.thunderstorm_probability >= 0.60 ? "warning" : activePred.thunderstorm_probability >= 0.40 ? "advisory" : activePred.thunderstorm_probability >= 0.30 ? "watch" : null);
+                const tierMeta = effectiveTier && ALERT_TIERS[effectiveTier as keyof typeof ALERT_TIERS] ? ALERT_TIERS[effectiveTier as keyof typeof ALERT_TIERS] : null;
+                const badgeLabel = tierMeta ? tierMeta.label : sevConfig.label;
+                const badgeClass = tierMeta ? tierMeta.badgeClass : sevConfig.badgeClass;
+
+                return (
+                  <div
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${badgeClass}`}
+                  >
+                    {badgeLabel}
+                  </div>
+                );
+              })()}
             </div>
+
+            {/* Severe Weather Guard Alert Banner */}
+            {activePred.tier_source === "hazard_guard" && (
+              <div
+                id="hazard-guard-banner"
+                className={`mt-3 rounded-xl border p-3 ${
+                  activePred.display_tier === "warning"
+                    ? "border-red-500/50 bg-red-500/15 text-red-950 dark:text-red-200"
+                    : "border-orange-500/50 bg-orange-500/15 text-orange-950 dark:text-orange-200"
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  <ShieldAlert className={`h-4 w-4 shrink-0 mt-0.5 ${
+                    activePred.display_tier === "warning" ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"
+                  }`} />
+                  <div className="text-xs font-semibold leading-relaxed">
+                    Severe weather detected: {activePred.hazard_reasons && activePred.hazard_reasons.length > 0 ? activePred.hazard_reasons.join(", ") : "extreme atmospheric conditions"}. Rule-based safety check — the AI model was not trained on cyclone conditions.
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Probability Metric Display */}
             <div className="mt-4 flex items-baseline justify-between rounded-xl bg-slate-100/80 p-3.5 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
@@ -206,6 +244,12 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                 <div className="text-3xl font-black text-slate-900 dark:text-white mt-0.5">
                   {formatProbability(activePred.thunderstorm_probability)}
                 </div>
+                {activePred.out_of_training_range && (
+                  <div id="out-of-range-note" className="text-[11px] font-medium text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                    <Info className="h-3.5 w-3.5 shrink-0" />
+                    <span>Outside model training conditions</span>
+                  </div>
+                )}
               </div>
 
               <div className="text-right space-y-1">
@@ -229,8 +273,8 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
               </div>
             )}
 
-            {/* Severe Storm & Lightning Safety Card (Warning Tier >= 60%) */}
-            {activePred.thunderstorm_probability >= 0.60 && (
+            {/* Severe Storm & Lightning Safety Card (Warning Tier) */}
+            {(activePred.thunderstorm_probability >= 0.60 || activePred.display_tier === "warning") && (
               <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-red-900 dark:text-red-200">
                 <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-red-700 dark:text-red-400">
                   <ShieldAlert className="h-4 w-4" />
@@ -266,6 +310,11 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                   const pSev = SEVERITY_CONFIG[p.severity as SeverityLevel] || SEVERITY_CONFIG.none;
                   const leadLabel = p.lead_time_hours === 0 ? "Now" : `+${p.lead_time_hours}h`;
                   const temp = p.input_conditions?.temperature_2m;
+                  const pTier = p.display_tier || (p.thunderstorm_probability >= 0.60 ? "warning" : p.thunderstorm_probability >= 0.40 ? "advisory" : p.thunderstorm_probability >= 0.30 ? "watch" : null);
+                  const pChipClass = pTier === "warning" ? "bg-red-500/20 text-red-700 dark:text-red-300 border border-red-500/40"
+                                   : pTier === "advisory" ? "bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-500/40"
+                                   : pTier === "watch" ? "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border border-yellow-500/40"
+                                   : pSev.chipClass;
 
                   return (
                     <button
@@ -283,7 +332,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                       </span>
                       <div
                         className={`my-1.5 rounded-full px-2 py-0.5 text-[11px] font-black ${
-                          isSelected ? "bg-white/20 text-white" : pSev.chipClass
+                          isSelected ? "bg-white/20 text-white" : pChipClass
                         }`}
                       >
                         {formatProbability(p.thunderstorm_probability)}
@@ -306,7 +355,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                   Risk Curve
                 </div>
                 <div className="text-[11px] text-teal-600 dark:text-teal-400 font-semibold">
-                  0.186 Alert Threshold
+                  {optimalThreshold.toFixed(3)} Alert Threshold
                 </div>
               </div>
 
@@ -351,7 +400,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                       }}
                     />
                     <ReferenceLine
-                      y={0.186}
+                      y={optimalThreshold}
                       stroke="#0d9488"
                       strokeDasharray="4 4"
                       strokeWidth={1.5}
@@ -442,6 +491,12 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
 
             {isWhyOpen && (
               <div className="mt-3 space-y-2.5 text-xs text-slate-600 dark:text-slate-300 border-t border-slate-200/60 pt-3 dark:border-slate-800/60 animate-in fade-in-50 leading-relaxed">
+                {activePred.hazard_reasons && activePred.hazard_reasons.length > 0 && (
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/15 p-2.5 text-xs text-amber-900 dark:text-amber-200">
+                    <span className="font-bold text-amber-700 dark:text-amber-400">Severe Weather Guard: </span>
+                    <span>{activePred.hazard_reasons.join(", ")} (Rule-based safety check active)</span>
+                  </div>
+                )}
                 <div className="rounded-xl bg-slate-100/80 p-2.5 dark:bg-slate-800/60 font-medium text-slate-800 dark:text-slate-200">
                   <span className="font-bold text-teal-600 dark:text-teal-400">Target Predicted: </span>
                   Chance of heavy warm rain (&gt; 2 mm in the next hour), used as an operational thunderstorm proxy.
@@ -471,7 +526,7 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
-                  Calibrated ML decision threshold is <span className="font-bold text-teal-600 dark:text-teal-400">18.6% (0.186)</span> due to natural convective class imbalance.
+                  Calibrated ML decision threshold is <span className="font-bold text-teal-600 dark:text-teal-400">{thresholdPercent}% ({optimalThreshold.toFixed(3)})</span> due to natural convective class imbalance.
                 </div>
               </div>
             )}

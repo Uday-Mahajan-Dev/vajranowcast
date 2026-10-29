@@ -75,16 +75,22 @@ class Settings(BaseSettings):
     INDIA_LON_MAX: float = 98.0
 
     # Model & Cache settings
+    MODEL_VERSION: str = "v2"
     MODEL_DIR: str = str(Path(__file__).resolve().parent / "ml" / "saved_models")
     CACHE_TTL_MINUTES: int = 15
+
+    @property
+    def ACTIVE_MODEL_DIR(self) -> str:
+        folder = "saved_models_v2" if self.MODEL_VERSION.lower() == "v2" else "saved_models"
+        return str(Path(__file__).resolve().parent / "ml" / folder)
 
     # =========================================================================
     # Unified Prediction & 3-Tier Alert Thresholds
     # =========================================================================
-    # OPTIMAL_THRESHOLD (0.1860):
-    #   Statistical ML decision boundary tuned via Precision-Recall curve F1-score
-    #   maximization on Colab validation set. P(TS) >= 0.1860 signifies a positive storm prediction.
-    OPTIMAL_THRESHOLD: float = 0.1860
+    @property
+    def OPTIMAL_THRESHOLD(self) -> float:
+        """v2 calibrated F1-optimal threshold (0.1798) with rollback to v1 (0.1860)."""
+        return 0.1798 if self.MODEL_VERSION.lower() == "v2" else 0.1860
 
     # 3 Alert Tiers:
     #   WATCH (>= 0.30): Convective storm conditions developing (8.9 alerts/city-mo, 47.3% precision)
@@ -93,6 +99,24 @@ class Settings(BaseSettings):
     ALERT_TIER_WATCH: float = 0.30
     ALERT_TIER_ADVISORY: float = 0.40
     ALERT_TIER_WARNING: float = 0.60
+
+    # Rule-Based Severe Weather Guard Thresholds
+    HAZARD_WIND_WATCH: float = 50.0        # km/h (strong wind)
+    HAZARD_WIND_WARNING: float = 62.0      # km/h (IMD cyclonic-storm threshold: cyclonic gale)
+    HAZARD_GUST_WARNING: float = 90.0      # km/h (damaging gusts)
+    HAZARD_RAIN_ADVISORY: float = 10.0     # mm/h (heavy rain)
+    HAZARD_RAIN_WARNING: float = 20.0      # mm/h (very heavy rain)
+    HAZARD_PRESSURE_FALL_3H: float = 3.0   # hPa fall over 3 hours
+    HAZARD_PRESSURE_FALL_RAIN: float = 2.0 # mm/h rain accompanying pressure fall
+    HAZARD_OUT_OF_RANGE_RAIN: float = 2.0  # mm/h
+    HAZARD_OUT_OF_RANGE_TEMP: float = 25.0 # °C
+    HAZARD_OUT_OF_RANGE_WIND: float = 62.0 # km/h
+    HAZARD_OUT_OF_RANGE_PRESSURE: float = 995.0 # hPa
+
+    @property
+    def HAZARD_OUT_OF_RANGE_CHECK_TEMP(self) -> bool:
+        """v1 training domain excluded cool rain (T <= 25 °C). v2 was trained on all temperatures including cool rain."""
+        return self.MODEL_VERSION.lower() != "v2"
 
     # Backward compatibility alias (minimum probability to generate any alert tier)
     ALERT_PROB_THRESHOLD: float = 0.30

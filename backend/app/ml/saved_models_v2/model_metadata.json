@@ -1,0 +1,448 @@
+{
+    "model_version": "v2",
+    "model_name": "Calibrated HistGradientBoostingClassifier",
+    "algorithm": "HistGradientBoostingClassifier + CalibratedClassifierCV (Isotonic)",
+    "data_source": "54 Open-Meteo ERA5 locations, 2019-2026",
+    "hyperparameters": {
+        "max_iter": 200,
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "min_samples_leaf": 20,
+        "l2_regularization": 1.0,
+        "max_bins": 255,
+        "class_weight": "balanced",
+        "early_stopping": true,
+        "validation_fraction": 0.1,
+        "n_iter_no_change": 15,
+        "random_state": 42
+    },
+    "label_definition": "(weather_code in CONVECTIVE_CODES) OR (precipitation > 2.0 AND relative_humidity_2m > 65 AND (temperature_2m - dew_point_2m) < 8)",
+    "locations_count": 54,
+    "locations": [
+        {
+            "name": "Delhi",
+            "latitude": 28.61,
+            "longitude": 77.21,
+            "region": "North"
+        },
+        {
+            "name": "Mumbai",
+            "latitude": 19.08,
+            "longitude": 72.88,
+            "region": "West Coast"
+        },
+        {
+            "name": "Kolkata",
+            "latitude": 22.57,
+            "longitude": 88.36,
+            "region": "East"
+        },
+        {
+            "name": "Chennai",
+            "latitude": 13.08,
+            "longitude": 80.27,
+            "region": "South East Coast"
+        },
+        {
+            "name": "Bengaluru",
+            "latitude": 12.97,
+            "longitude": 77.59,
+            "region": "South Interior"
+        },
+        {
+            "name": "Hyderabad",
+            "latitude": 17.39,
+            "longitude": 78.49,
+            "region": "South Central"
+        },
+        {
+            "name": "Jaipur",
+            "latitude": 26.91,
+            "longitude": 75.79,
+            "region": "Northwest"
+        },
+        {
+            "name": "Lucknow",
+            "latitude": 26.85,
+            "longitude": 80.95,
+            "region": "North Central"
+        },
+        {
+            "name": "Guwahati",
+            "latitude": 26.14,
+            "longitude": 91.74,
+            "region": "Northeast"
+        },
+        {
+            "name": "Nagpur",
+            "latitude": 21.15,
+            "longitude": 79.09,
+            "region": "Central"
+        },
+        {
+            "name": "Jammu & Kashmir (Srinagar)",
+            "latitude": 34.0,
+            "longitude": 74.8,
+            "region": "Jammu & Kashmir (Srinagar)"
+        },
+        {
+            "name": "Ladakh (Leh)",
+            "latitude": 34.2,
+            "longitude": 77.5,
+            "region": "Ladakh (Leh)"
+        },
+        {
+            "name": "Jammu (Jammu Plain)",
+            "latitude": 32.5,
+            "longitude": 75.0,
+            "region": "Jammu (Jammu Plain)"
+        },
+        {
+            "name": "Himachal Pradesh (Mandi/Shimla)",
+            "latitude": 31.8,
+            "longitude": 77.0,
+            "region": "Himachal Pradesh (Mandi/Shimla)"
+        },
+        {
+            "name": "Punjab (Ludhiana/Jalandhar)",
+            "latitude": 31.0,
+            "longitude": 75.5,
+            "region": "Punjab (Ludhiana/Jalandhar)"
+        },
+        {
+            "name": "Uttarakhand (Dehradun/Garhwal)",
+            "latitude": 30.0,
+            "longitude": 78.5,
+            "region": "Uttarakhand (Dehradun/Garhwal)"
+        },
+        {
+            "name": "Haryana (Hisar/Rohtak)",
+            "latitude": 29.5,
+            "longitude": 76.5,
+            "region": "Haryana (Hisar/Rohtak)"
+        },
+        {
+            "name": "Western UP (Bareilly/Moradabad)",
+            "latitude": 28.5,
+            "longitude": 79.5,
+            "region": "Western UP (Bareilly/Moradabad)"
+        },
+        {
+            "name": "SW UP (Agra/Mathura)",
+            "latitude": 27.2,
+            "longitude": 78.0,
+            "region": "SW UP (Agra/Mathura)"
+        },
+        {
+            "name": "Eastern UP (Gorakhpur)",
+            "latitude": 26.8,
+            "longitude": 83.4,
+            "region": "Eastern UP (Gorakhpur)"
+        },
+        {
+            "name": "Southern UP (Prayagraj/Varanasi)",
+            "latitude": 25.4,
+            "longitude": 81.8,
+            "region": "Southern UP (Prayagraj/Varanasi)"
+        },
+        {
+            "name": "North Rajasthan (Bikaner)",
+            "latitude": 28.0,
+            "longitude": 73.3,
+            "region": "North Rajasthan (Bikaner)"
+        },
+        {
+            "name": "West Rajasthan (Jaisalmer)",
+            "latitude": 26.9,
+            "longitude": 71.0,
+            "region": "West Rajasthan (Jaisalmer)"
+        },
+        {
+            "name": "Central Rajasthan (Jodhpur)",
+            "latitude": 26.3,
+            "longitude": 73.0,
+            "region": "Central Rajasthan (Jodhpur)"
+        },
+        {
+            "name": "South Rajasthan (Udaipur)",
+            "latitude": 24.6,
+            "longitude": 73.7,
+            "region": "South Rajasthan (Udaipur)"
+        },
+        {
+            "name": "SE Rajasthan (Kota)",
+            "latitude": 25.1,
+            "longitude": 75.8,
+            "region": "SE Rajasthan (Kota)"
+        },
+        {
+            "name": "Gujarat (Kutch/Bhuj)",
+            "latitude": 23.8,
+            "longitude": 69.8,
+            "region": "Gujarat (Kutch/Bhuj)"
+        },
+        {
+            "name": "Gujarat (Ahmedabad/Gandhinagar)",
+            "latitude": 23.0,
+            "longitude": 72.6,
+            "region": "Gujarat (Ahmedabad/Gandhinagar)"
+        },
+        {
+            "name": "Saurashtra (Rajkot)",
+            "latitude": 22.3,
+            "longitude": 70.8,
+            "region": "Saurashtra (Rajkot)"
+        },
+        {
+            "name": "South Gujarat (Surat)",
+            "latitude": 21.2,
+            "longitude": 72.8,
+            "region": "South Gujarat (Surat)"
+        },
+        {
+            "name": "North MP (Gwalior/Guna)",
+            "latitude": 24.5,
+            "longitude": 77.5,
+            "region": "North MP (Gwalior/Guna)"
+        },
+        {
+            "name": "Central MP (Bhopal)",
+            "latitude": 23.2,
+            "longitude": 77.4,
+            "region": "Central MP (Bhopal)"
+        },
+        {
+            "name": "West MP (Indore)",
+            "latitude": 22.7,
+            "longitude": 75.8,
+            "region": "West MP (Indore)"
+        },
+        {
+            "name": "East MP (Jabalpur)",
+            "latitude": 23.2,
+            "longitude": 80.0,
+            "region": "East MP (Jabalpur)"
+        },
+        {
+            "name": "NE MP (Rewa/Sidhi)",
+            "latitude": 24.2,
+            "longitude": 81.5,
+            "region": "NE MP (Rewa/Sidhi)"
+        },
+        {
+            "name": "South MP (Betul/Khandwa)",
+            "latitude": 21.8,
+            "longitude": 77.9,
+            "region": "South MP (Betul/Khandwa)"
+        },
+        {
+            "name": "North Chhattisgarh (Bilaspur)",
+            "latitude": 22.1,
+            "longitude": 82.1,
+            "region": "North Chhattisgarh (Bilaspur)"
+        },
+        {
+            "name": "Central Chhattisgarh (Raipur)",
+            "latitude": 21.2,
+            "longitude": 81.6,
+            "region": "Central Chhattisgarh (Raipur)"
+        },
+        {
+            "name": "South Chhattisgarh (Bastar/Jagdalpur)",
+            "latitude": 19.1,
+            "longitude": 81.9,
+            "region": "South Chhattisgarh (Bastar/Jagdalpur)"
+        },
+        {
+            "name": "Bihar (Patna/Muzaffarpur)",
+            "latitude": 25.6,
+            "longitude": 85.1,
+            "region": "Bihar (Patna/Muzaffarpur)"
+        },
+        {
+            "name": "NE Bihar (Purnia/Kishanganj)",
+            "latitude": 26.1,
+            "longitude": 87.5,
+            "region": "NE Bihar (Purnia/Kishanganj)"
+        },
+        {
+            "name": "South Bihar (Gaya/Bhagalpur)",
+            "latitude": 24.8,
+            "longitude": 85.0,
+            "region": "South Bihar (Gaya/Bhagalpur)"
+        },
+        {
+            "name": "Jharkhand (Ranchi)",
+            "latitude": 23.3,
+            "longitude": 85.3,
+            "region": "Jharkhand (Ranchi)"
+        },
+        {
+            "name": "Jharkhand (Jamshedpur/Dhanbad)",
+            "latitude": 22.8,
+            "longitude": 86.2,
+            "region": "Jharkhand (Jamshedpur/Dhanbad)"
+        },
+        {
+            "name": "Sub-Himalayan Bengal (Siliguri)",
+            "latitude": 26.7,
+            "longitude": 88.4,
+            "region": "Sub-Himalayan Bengal (Siliguri)"
+        },
+        {
+            "name": "Central Bengal (Murshidabad/Malda)",
+            "latitude": 24.0,
+            "longitude": 88.2,
+            "region": "Central Bengal (Murshidabad/Malda)"
+        },
+        {
+            "name": "North Odisha (Balasore/Baripada)",
+            "latitude": 21.5,
+            "longitude": 86.9,
+            "region": "North Odisha (Balasore/Baripada)"
+        },
+        {
+            "name": "Coastal Odisha (Bhubaneswar/Cuttack)",
+            "latitude": 20.3,
+            "longitude": 85.8,
+            "region": "Coastal Odisha (Bhubaneswar/Cuttack)"
+        },
+        {
+            "name": "West Odisha (Sambalpur)",
+            "latitude": 21.5,
+            "longitude": 83.9,
+            "region": "West Odisha (Sambalpur)"
+        },
+        {
+            "name": "South Odisha (Berhampur/Ganjam)",
+            "latitude": 19.3,
+            "longitude": 84.8,
+            "region": "South Odisha (Berhampur/Ganjam)"
+        },
+        {
+            "name": "Vidarbha (Akola/Amravati)",
+            "latitude": 20.7,
+            "longitude": 77.0,
+            "region": "Vidarbha (Akola/Amravati)"
+        },
+        {
+            "name": "Marathwada (Chhatrapati Sambhajinagar)",
+            "latitude": 19.9,
+            "longitude": 75.3,
+            "region": "Marathwada (Chhatrapati Sambhajinagar)"
+        },
+        {
+            "name": "Madhya Maharashtra (Pune)",
+            "latitude": 18.5,
+            "longitude": 73.9,
+            "region": "Madhya Maharashtra (Pune)"
+        },
+        {
+            "name": "South Maharashtra (Kolhapur)",
+            "latitude": 16.7,
+            "longitude": 74.2,
+            "region": "South Maharashtra (Kolhapur)"
+        }
+    ],
+    "period": "2019-01-01 to 2026-10-28",
+    "splits": {
+        "train": "2019-01-01 to 2023-12-31",
+        "validation": "2024-01-01 to 2024-12-31",
+        "test": "2025-01-01 to 2026-10-28"
+    },
+    "optimal_threshold": 0.1798,
+    "alert_tiers": {
+        "watch": 0.3,
+        "advisory": 0.4,
+        "warning": 0.6
+    },
+    "test_metrics": {
+        "optimal_threshold": {
+            "threshold": 0.1798,
+            "roc_auc": 0.9476,
+            "pr_auc": 0.2991,
+            "brier_score": 0.0151,
+            "precision": 0.2886,
+            "recall_pod": 0.4749,
+            "f1": 0.359,
+            "far": 0.7114,
+            "csi": 0.2188,
+            "tp": 7698,
+            "fp": 18979,
+            "fn": 8513,
+            "tn": 828540
+        },
+        "tier_watch_0.30": {
+            "threshold": 0.3,
+            "roc_auc": 0.9476,
+            "pr_auc": 0.2991,
+            "brier_score": 0.0151,
+            "precision": 0.4696,
+            "recall_pod": 0.1915,
+            "f1": 0.2721,
+            "far": 0.5304,
+            "csi": 0.1575,
+            "tp": 3105,
+            "fp": 3507,
+            "fn": 13106,
+            "tn": 844012
+        },
+        "tier_advisory_0.40": {
+            "threshold": 0.4,
+            "roc_auc": 0.9476,
+            "pr_auc": 0.2991,
+            "brier_score": 0.0151,
+            "precision": 0.5081,
+            "recall_pod": 0.157,
+            "f1": 0.2399,
+            "far": 0.4919,
+            "csi": 0.1363,
+            "tp": 2545,
+            "fp": 2464,
+            "fn": 13666,
+            "tn": 845055
+        },
+        "tier_warning_0.60": {
+            "threshold": 0.6,
+            "roc_auc": 0.9476,
+            "pr_auc": 0.2991,
+            "brier_score": 0.0151,
+            "precision": 0.6353,
+            "recall_pod": 0.0466,
+            "f1": 0.0869,
+            "far": 0.3647,
+            "csi": 0.0454,
+            "tp": 756,
+            "fp": 434,
+            "fn": 15455,
+            "tn": 847085
+        }
+    },
+    "features": [
+        "cape",
+        "cin",
+        "temperature_2m",
+        "dewpoint_2m",
+        "relative_humidity",
+        "surface_pressure",
+        "wind_speed_10m",
+        "wind_direction_10m",
+        "cloud_cover",
+        "precipitable_water",
+        "dew_point_depression",
+        "cape_cin_ratio",
+        "hour_sin",
+        "hour_cos",
+        "month_sin",
+        "month_cos",
+        "latitude",
+        "longitude",
+        "precip_1hr_ago",
+        "precip_last_3hr",
+        "storm_2hr_ago",
+        "cloud_trend",
+        "temp_trend",
+        "pressure_trend"
+    ],
+    "num_features": 24
+}

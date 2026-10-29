@@ -88,9 +88,15 @@ class ThunderstormClassifier:
         self.scaler = None
         self.feature_columns = None
         self.optimal_threshold = settings.OPTIMAL_THRESHOLD
+        self.metadata = {}
+        self.model_version = getattr(settings, "MODEL_VERSION", "v1")
         self.is_trained = False
         self._initialized = True
 
+        self._load_artifacts()
+
+    def reload(self):
+        """Force reload artifacts from ACTIVE_MODEL_DIR."""
         self._load_artifacts()
 
     @staticmethod
@@ -134,7 +140,8 @@ class ThunderstormClassifier:
 
     def _load_artifacts(self):
         """Load trained model, scaler, feature columns, and optimal threshold with hash verification."""
-        model_dir = settings.MODEL_DIR
+        model_dir = getattr(settings, "ACTIVE_MODEL_DIR", settings.MODEL_DIR)
+        self.model_version = getattr(settings, "MODEL_VERSION", "v1")
         try:
             # 1. Verify model integrity first
             if not self._verify_model_integrity(model_dir):
@@ -144,12 +151,13 @@ class ThunderstormClassifier:
             scaler_path = os.path.join(model_dir, "thunderstorm_scaler.pkl")
             cols_path = os.path.join(model_dir, "feature_columns.pkl")
             thresh_path = os.path.join(model_dir, "optimal_threshold.pkl")
+            meta_path = os.path.join(model_dir, "model_metadata.json")
 
-            if not (os.path.exists(model_path) and os.path.exists(scaler_path) and os.path.exists(cols_path)):
+            if not (os.path.exists(model_path) and os.path.exists(cols_path)):
                 raise FileNotFoundError("One or more required model artifacts are missing in MODEL_DIR.")
 
             self.model = joblib.load(model_path)
-            self.scaler = joblib.load(scaler_path)
+            self.scaler = joblib.load(scaler_path) if os.path.exists(scaler_path) else None
             self.feature_columns = joblib.load(cols_path)
 
             if os.path.exists(thresh_path):
@@ -157,9 +165,15 @@ class ThunderstormClassifier:
             else:
                 self.optimal_threshold = settings.OPTIMAL_THRESHOLD
 
+            if os.path.exists(meta_path):
+                with open(meta_path, "r", encoding="utf-8") as f:
+                    self.metadata = json.load(f)
+            else:
+                self.metadata = {}
+
             self.is_trained = True
             logger.info(
-                f"ThunderstormClassifier loaded successfully from {model_dir}. "
+                f"ThunderstormClassifier ({self.model_version}) loaded successfully from {model_dir}. "
                 f"Optimal threshold: {self.optimal_threshold:.4f}"
             )
         except Exception as e:

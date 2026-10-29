@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ChevronUp, ChevronDown, Flame, Layers } from "lucide-react";
 import { SEVERITY_CONFIG } from "@/lib/constants";
 import { SeverityLevel } from "@/lib/types";
+import { useModelInfo } from "@/lib/useModelInfo";
 
 interface MapLegendProps {
   showHeatmap: boolean;
@@ -15,6 +16,7 @@ export const MapLegend: React.FC<MapLegendProps> = ({
   className = "",
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { thresholdPercent, modelVersion } = useModelInfo();
 
   return (
     <div
@@ -89,16 +91,21 @@ export const MapLegend: React.FC<MapLegendProps> = ({
 
             {/* Decision Threshold Note */}
             <div className="rounded-lg bg-slate-100/80 dark:bg-slate-800/60 p-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-              <span className="font-bold text-teal-600 dark:text-teal-400">P(TS) ≥ 18.6%</span> ML statistical decision boundary for convective hit vs miss.
+              <span className="font-bold text-teal-600 dark:text-teal-400">P(TS) ≥ {thresholdPercent}%</span> ML statistical decision boundary for convective hit vs miss.
             </div>
 
-            {/* Heatmap & Resolution Footnote */}
-            <div className="border-t border-slate-200/50 pt-1.5 text-[10px] text-slate-400 leading-tight">
-              {showHeatmap && (
-                <div className="mb-1 text-orange-500 dark:text-orange-400 font-medium">
-                  • Spatial grid: ~70 points (~175 km spacing)
-                </div>
-              )}
+            {/* Heatmap & Resolution Footnote + Active Model Version */}
+            <div className="border-t border-slate-200/50 pt-1.5 text-[10px] text-slate-400 leading-tight flex items-center justify-between">
+              <div>
+                {showHeatmap && (
+                  <span className="text-orange-500 dark:text-orange-400 font-medium">
+                    • Spatial grid: ~70 pts (~175 km)
+                  </span>
+                )}
+              </div>
+              <div className="font-mono text-slate-400 dark:text-slate-500 font-semibold text-right">
+                Model {modelVersion}
+              </div>
             </div>
           </div>
         )}

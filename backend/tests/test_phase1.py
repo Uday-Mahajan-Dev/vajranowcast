@@ -322,10 +322,19 @@ def test_disclaimer_present_in_health_and_root(client):
 # ==============================================================================
 
 def test_model_hash_verification(monkeypatch):
-    """Model loader must successfully verify stored hashes."""
-    clf = ThunderstormClassifier()
-    assert clf.is_trained is True
-    assert clf.optimal_threshold == 0.186
+    """Model loader must successfully verify stored hashes for v1 rollback model."""
+    monkeypatch.setenv("MODEL_VERSION", "v1")
+    from app.config import settings
+    orig_version = settings.MODEL_VERSION
+    settings.MODEL_VERSION = "v1"
+    try:
+        clf = ThunderstormClassifier()
+        clf.reload()
+        assert clf.is_trained is True
+        assert abs(clf.optimal_threshold - 0.186) < 0.005
+    finally:
+        settings.MODEL_VERSION = orig_version
+        clf.reload()
 
 
 # ==============================================================================

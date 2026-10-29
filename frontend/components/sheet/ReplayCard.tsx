@@ -7,6 +7,7 @@ import {
   SeverityLevel,
 } from "@/lib/types";
 import { SEVERITY_CONFIG, getSeverityFromProbability } from "@/lib/constants";
+import { useModelInfo } from "@/lib/useModelInfo";
 import { formatProbability, formatISTTime } from "@/lib/utils";
 import {
   Play,
@@ -86,6 +87,14 @@ export const ReplayCard: React.FC<ReplayCardProps> = ({
   const replayHourIndex = timeline.findIndex((t) => t.is_replay_hour);
   const initialIndex = replayHourIndex !== -1 ? replayHourIndex : 6;
 
+  const { optimalThreshold: defaultOptimalThreshold } = useModelInfo();
+  const optimalThreshold =
+    typeof replay.optimal_threshold === "number"
+      ? replay.optimal_threshold
+      : defaultOptimalThreshold;
+  const threshStr = optimalThreshold.toFixed(3);
+  const percentStr = (optimalThreshold * 100).toFixed(1);
+
   const [currentIndex, setCurrentIndex] = useState<number>(initialIndex);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const playTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -147,15 +156,15 @@ export const ReplayCard: React.FC<ReplayCardProps> = ({
   const getVerdictExplanation = (verdict?: string | null, isOnset?: boolean, isReplayHour: boolean = true) => {
     if (verdict === "Hit") {
       if (isOnset) {
-        return "Onset Hit: The model anticipated heavy rain before it began (P(TS) ≥ 0.186 while no rain was falling at this hour; heavy rain arrived at t+1).";
+        return `Onset Hit: The model anticipated heavy rain before it began (P(TS) ≥ ${threshStr} while no rain was falling at this hour; heavy rain arrived at t+1).`;
       }
-      return "Reactive Alert: The model issued an alert (P(TS) ≥ 0.186), but rain was already falling at this hour (reacting to ongoing precipitation rather than anticipating onset).";
+      return `Reactive Alert: The model issued an alert (P(TS) ≥ ${threshStr}), but rain was already falling at this hour (reacting to ongoing precipitation rather than anticipating onset).`;
     }
     if (verdict === "Miss") {
-      return "Miss: Heavy rain (> 2 mm) occurred in the next hour (t+1), but the model remained below the alert threshold (P(TS) < 0.186).";
+      return `Miss: Heavy rain (> 2 mm) occurred in the next hour (t+1), but the model remained below the alert threshold (P(TS) < ${threshStr}).`;
     }
     if (verdict === "False Alarm") {
-      return "False Alarm: The model crossed the alert threshold (P(TS) ≥ 0.186), but heavy rain did not follow in the next hour (t+1).";
+      return `False Alarm: The model crossed the alert threshold (P(TS) ≥ ${threshStr}), but heavy rain did not follow in the next hour (t+1).`;
     }
     return "Correct Negative: The model stayed below the alert threshold, and no heavy rain occurred in the next hour.";
   };
@@ -308,7 +317,7 @@ export const ReplayCard: React.FC<ReplayCardProps> = ({
               {formatProbability(pReplay)}
             </div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-              Threshold: <span className="font-bold text-teal-600 dark:text-teal-400">0.186 (18.6%)</span>
+              Threshold: <span className="font-bold text-teal-600 dark:text-teal-400">{threshStr} ({percentStr}%)</span>
             </div>
           </div>
 
@@ -453,15 +462,15 @@ export const ReplayCard: React.FC<ReplayCardProps> = ({
                   );
                 }}
               />
-              {/* Optimal Threshold Line 0.186 */}
+              {/* Optimal Threshold Line */}
               <ReferenceLine
                 yAxisId="prob"
-                y={0.186}
+                y={optimalThreshold}
                 stroke="#0d9488"
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
                 label={{
-                  value: "0.186 Threshold",
+                  value: `${threshStr} Threshold`,
                   fill: "#0d9488",
                   fontSize: 9,
                   position: "top",

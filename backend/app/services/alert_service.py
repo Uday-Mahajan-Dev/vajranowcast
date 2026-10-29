@@ -48,7 +48,7 @@ class AlertService:
                 .select("*")
                 .eq("city", city)
                 .eq("is_active", True)
-                .eq("alert_type", "thunderstorm")
+                .in_("alert_type", ["thunderstorm", "severe_weather_guard"])
                 .execute()
             )
             return res.data or []
@@ -141,6 +141,10 @@ class AlertService:
                 continue
 
             for p in preds:
+                display_tier = None
+                tier_source = None
+                hazard_reasons = []
+
                 # Support both dict and ThunderstormPrediction Pydantic model
                 if isinstance(p, ThunderstormPrediction):
                     ts_prob = p.thunderstorm_probability
@@ -149,6 +153,9 @@ class AlertService:
                     lon = p.longitude
                     severity_val = p.severity.value if hasattr(p.severity, "value") else str(p.severity)
                     lead_hours = p.lead_time_hours
+                    display_tier = p.display_tier
+                    tier_source = p.tier_source
+                    hazard_reasons = p.hazard_reasons or []
                 elif isinstance(p, dict):
                     if "error" in p or "thunderstorm_probability" not in p:
                         continue
@@ -158,14 +165,31 @@ class AlertService:
                     lon = float(p.get("longitude", 0.0))
                     severity_val = str(p.get("severity", "none"))
                     lead_hours = float(p.get("lead_time_hours", 1.0))
+                    display_tier = p.get("display_tier")
+                    tier_source = p.get("tier_source")
+                    hazard_reasons = p.get("hazard_reasons", [])
                 else:
                     continue
 
-                tier = self.get_tier_for_probability(ts_prob)
+                tier = display_tier if display_tier in ("watch", "advisory", "warning") else self.get_tier_for_probability(ts_prob)
                 if tier is not None:
                     valid_from = now.isoformat()
                     valid_until = (now + timedelta(hours=lead_hours + 1.0)).isoformat()
-                    msg = self.build_tier_message(city, tier, ts_prob, lead_hours)
+
+                    is_guard = (tier_source == "hazard_guard")
+                    alert_type = "severe_weather_guard" if is_guard else "thunderstorm"
+
+                    if is_guard:
+                        reasons_clean = [r.strip() for r in hazard_reasons if r.strip()]
+                        reasons_clean = [r[9:] if r.lower().startswith("forecast ") else r for r in reasons_clean]
+                        reasons_str = " and ".join(reasons_clean) if reasons_clean else "severe atmospheric conditions"
+                        pct = int(round(ts_prob * 100))
+                        msg = (
+                            f"{tier.capitalize()} (rule-based): forecast {reasons_str}. "
+                            f"ML storm probability {pct}% — conditions are outside the model's training range."
+                        )
+                    else:
+                        msg = self.build_tier_message(city, tier, ts_prob, lead_hours)
 
                     # Step 2: De-duplication check against existing active alerts for this city
                     existing_active = await asyncio.to_thread(self._sync_get_active_alerts_for_city, city)
@@ -175,6 +199,7 @@ class AlertService:
                         target_alert = existing_active[0]
                         alert_id = target_alert["alert_id"]
                         updates = {
+                            "alert_type": alert_type,
                             "severity": severity_val,
                             "tier": tier,
                             "is_test": False,
@@ -200,7 +225,7 @@ class AlertService:
                             "city": city,
                             "latitude": lat,
                             "longitude": lon,
-                            "alert_type": "thunderstorm",
+                            "alert_type": alert_type,
                             "severity": severity_val,
                             "tier": tier,
                             "is_test": False,

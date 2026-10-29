@@ -54,6 +54,15 @@ export const AboutTab: React.FC<AboutTabProps> = ({
   const displaySources = sourcesStatus.length > 0 ? sourcesStatus : DEFAULT_SOURCES;
   const optimalThresh = modelInfo?.optimal_threshold ?? OPTIMAL_THRESHOLD;
   const watchThresh = modelInfo?.alert_tiers?.watch ?? ALERT_THRESHOLD;
+  const advisoryThresh = modelInfo?.alert_tiers?.advisory ?? 0.40;
+  const warningThresh = modelInfo?.alert_tiers?.warning ?? 0.60;
+
+  const locCount = modelInfo?.locations_count ?? 54;
+  const period = modelInfo?.period ?? "2019-01-01 to 2026-10-28";
+  const trainSplit = modelInfo?.splits?.train ?? "2019-01-01 to 2023-12-31";
+  const valSplit = modelInfo?.splits?.validation ?? "2024-01-01 to 2024-12-31";
+  const testSplit = modelInfo?.splits?.test ?? "2025-01-01 to 2026-10-28";
+  const testMetrics = modelInfo?.metrics?.optimal_threshold;
 
   return (
     <div className="space-y-4">
@@ -63,8 +72,11 @@ export const AboutTab: React.FC<AboutTabProps> = ({
           <Info className="h-5 w-5 text-teal-600 dark:text-teal-400" />
           About VajraNowcast
         </h2>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-          AI-Powered Convective Weather Nowcasting Platform for India (v1.1.0)
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
+          <span>AI-Powered Convective Weather Nowcasting Platform for India (v1.1.0)</span>
+          <span className="inline-flex items-center rounded-full bg-teal-500/10 px-2 py-0.5 text-[10px] font-semibold text-teal-600 dark:text-teal-400 border border-teal-500/20">
+            Model {modelInfo?.model_version ? modelInfo.model_version.toUpperCase() : "V2"}
+          </span>
         </p>
       </div>
 
@@ -77,38 +89,134 @@ export const AboutTab: React.FC<AboutTabProps> = ({
         {DEFAULT_DISCLAIMER} This system is an academic &amp; technological demonstration and does not replace official bulletins from the India Meteorological Department (IMD) or State Disaster Management Authorities.
       </div>
 
-      {/* What it predicts */}
-      <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/60 space-y-2">
+      {/* Model Overview & Dataset */}
+      <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/60 space-y-2.5">
         <h3 className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
-          <Sparkles className="h-3.5 w-3.5" /> What the Model Predicts
+          <Cpu className="h-3.5 w-3.5" /> Model Architecture &amp; Training Dataset
         </h3>
         <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-          The ML model produces the <strong>chance of heavy warm rain (&gt; 2 mm in the next hour)</strong>, used as a statistical thunderstorm proxy.
+          VajraNowcast is powered by an isotonic-calibrated <strong>HistGradientBoostingClassifier (v2)</strong> trained on real Open-Meteo ERA5 hourly reanalysis across <strong>{locCount} meteorological locations</strong> spanning <strong>{period}</strong>.
         </p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          Lead times beyond 1 hour (2h, 3h, 6h) use numerical weather forecast inputs and represent extrapolated convective threat horizons.
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          Unlike legacy v1 which enforced an artificial temperature restriction (&gt;25 °C over 10 cities), Model v2 eliminates thermal cliffs and generalizes across both warm-season convective cells and cool-season / cyclonic rainfall bands down through 22–24 °C.
+        </p>
+        <div className="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">Train Split</span>
+            <strong className="text-slate-900 dark:text-white block font-mono text-[10px] truncate" title={trainSplit}>
+              {trainSplit.split(" ")[0].slice(0, 4)}–{trainSplit.split(" ")[2]?.slice(0, 4) || "2023"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">Validation Split</span>
+            <strong className="text-slate-900 dark:text-white block font-mono text-[10px] truncate" title={valSplit}>
+              {valSplit.split(" ")[0].slice(0, 4)}–{valSplit.split(" ")[2]?.slice(0, 4) || "2024"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">Holdout Test</span>
+            <strong className="text-slate-900 dark:text-white block font-mono text-[10px] truncate" title={testSplit}>
+              {testSplit.split(" ")[0].slice(0, 4)}–{testSplit.split(" ")[2]?.slice(0, 4) || "2026"}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Independent Test Metrics */}
+      <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/60 space-y-2.5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
+          <Sparkles className="h-3.5 w-3.5" /> Test Set Performance (2025–2026 Holdout)
+        </h3>
+        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Evaluated on 863,730 unseen test hours across 54 stations with chronological time-based splitting:
+        </p>
+        <div className="grid grid-cols-4 gap-2 text-center text-xs">
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">ROC AUC</span>
+            <strong className="text-xs font-bold text-teal-600 dark:text-teal-400 tabular-nums">
+              {testMetrics?.roc_auc !== undefined ? testMetrics.roc_auc.toFixed(4) : "0.9476"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">PR AUC</span>
+            <strong className="text-xs font-bold text-teal-600 dark:text-teal-400 tabular-nums">
+              {testMetrics?.pr_auc !== undefined ? testMetrics.pr_auc.toFixed(4) : "0.2991"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">Brier Score</span>
+            <strong className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+              {testMetrics?.brier_score !== undefined ? testMetrics.brier_score.toFixed(4) : "0.0151"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">F1 Score</span>
+            <strong className="text-xs font-bold text-teal-600 dark:text-teal-400 tabular-nums">
+              {testMetrics?.f1 !== undefined ? testMetrics.f1.toFixed(4) : "0.3590"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">Precision</span>
+            <strong className="text-xs font-bold text-slate-800 dark:text-slate-200 tabular-nums">
+              {testMetrics?.precision !== undefined ? testMetrics.precision.toFixed(4) : "0.2886"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">Recall (POD)</span>
+            <strong className="text-xs font-bold text-slate-800 dark:text-slate-200 tabular-nums">
+              {testMetrics?.recall_pod !== undefined ? testMetrics.recall_pod.toFixed(4) : "0.4749"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">CSI</span>
+            <strong className="text-xs font-bold text-slate-800 dark:text-slate-200 tabular-nums">
+              {testMetrics?.csi !== undefined ? testMetrics.csi.toFixed(4) : "0.2188"}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">Optimal Thresh</span>
+            <strong className="text-xs font-bold text-teal-600 dark:text-teal-400 tabular-nums">
+              {optimalThresh.toFixed(4)}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Severe Weather Guard (Rule-Based Safety Net) */}
+      <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/60 space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+          <ShieldAlert className="h-3.5 w-3.5" /> Severe Weather Guard (Synoptic Safety Backstop)
+        </h3>
+        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+          While Model v2 directly predicts rainfall in cool and warm regimes, an automated deterministic Severe Weather Guard monitors raw forecast conditions for extreme synoptic dynamics: cyclonic gales (≥ 62 km/h) and rapid barometric pressure drops (&lt; 995 hPa). This rule-based safety backstop guarantees critical warnings are raised even in unmodeled deep low-pressure extremes.
         </p>
       </div>
 
       {/* Decision Threshold & Severity Scale */}
       <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/60 space-y-2.5">
         <h3 className="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
-          <Cpu className="h-3.5 w-3.5" /> Thresholds &amp; Decision Boundary
+          <Cpu className="h-3.5 w-3.5" /> Operational Alert Tiers
         </h3>
         <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-          Due to extreme natural class imbalance (~1.5% positive convective prevalence), standard 50% cutoffs fail. The statistical decision boundary is calibrated at:
+          Calibrated to account for convective class imbalance (~1.8% positive prevalence) across India:
         </p>
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-3 gap-2 text-xs">
           <div className="rounded-xl bg-slate-100 p-2.5 dark:bg-slate-800/60">
-            <span className="text-[10px] text-slate-400 block font-medium">Optimal Storm Threshold</span>
-            <strong className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
-              P(TS) ≥ {optimalThresh.toFixed(3)}
+            <span className="text-[10px] text-slate-400 block font-medium">Watch Tier</span>
+            <strong className="text-sm font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+              P(TS) ≥ {watchThresh.toFixed(2)}
             </strong>
           </div>
           <div className="rounded-xl bg-slate-100 p-2.5 dark:bg-slate-800/60">
-            <span className="text-[10px] text-slate-400 block font-medium">Operational Watch</span>
+            <span className="text-[10px] text-slate-400 block font-medium">Advisory Tier</span>
+            <strong className="text-sm font-bold text-orange-600 dark:text-orange-400 tabular-nums">
+              P(TS) ≥ {advisoryThresh.toFixed(2)}
+            </strong>
+          </div>
+          <div className="rounded-xl bg-slate-100 p-2.5 dark:bg-slate-800/60">
+            <span className="text-[10px] text-slate-400 block font-medium">Warning Tier</span>
             <strong className="text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums">
-              P(TS) ≥ {watchThresh.toFixed(2)}
+              P(TS) ≥ {warningThresh.toFixed(2)}
             </strong>
           </div>
         </div>

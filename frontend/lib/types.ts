@@ -50,6 +50,12 @@ export interface ThunderstormPrediction {
   cached_at?: string | null;
   stale_reason?: string | null;
   disclaimer: string;
+  hazard_flags?: string[];
+  hazard_tier?: "watch" | "advisory" | "warning" | string | null;
+  hazard_reasons?: string[];
+  out_of_training_range?: boolean;
+  display_tier?: "watch" | "advisory" | "warning" | string | null;
+  tier_source?: "ml" | "hazard_guard" | string | null;
 }
 
 export interface NowcastMetadata {
@@ -121,6 +127,12 @@ export interface GridPointPrediction {
   cape: number;
   cin: number;
   precipitable_water: number;
+  display_tier?: "watch" | "advisory" | "warning" | string | null;
+  hazard_tier?: "watch" | "advisory" | "warning" | string | null;
+  hazard_flags?: string[];
+  hazard_reasons?: string[];
+  out_of_training_range?: boolean;
+  tier_source?: "ml" | "hazard_guard" | string | null;
 }
 
 export interface GridResponse {
@@ -141,6 +153,7 @@ export interface LocalFieldCell {
   lon: number;
   prob: number;
   precipitation: number;
+  display_tier?: "watch" | "advisory" | "warning" | string | null;
 }
 
 export interface LocalFieldWind {
@@ -239,8 +252,14 @@ export interface DataSourceStatus {
 }
 
 export interface ModelInfo {
+  model_version?: string;
   model_name: string;
   model_type: string;
+  data_source?: string;
+  locations_count?: number;
+  period?: string;
+  splits?: Record<string, string>;
+  metrics?: Record<string, any>;
   lead_time: string;
   target_description: string;
   thermodynamic_indices_description: string;

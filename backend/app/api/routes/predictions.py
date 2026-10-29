@@ -226,17 +226,41 @@ async def get_model_info():
     """
     Get machine learning model metadata, architecture details, feature list, and confidence calibration formulas.
     """
+    clf = ThunderstormClassifier()
+    active_version = getattr(clf, "model_version", settings.MODEL_VERSION)
+    meta = getattr(clf, "metadata", {})
+    opt_thresh = getattr(clf, "optimal_threshold", settings.OPTIMAL_THRESHOLD)
+
+    opt_metrics = meta.get("test_metrics", {}).get("optimal_threshold", {})
+    roc_auc = opt_metrics.get("roc_auc", 0.9476 if active_version == "v2" else 0.9467)
+
     return {
-        "model_name": "Calibrated HistGradientBoostingClassifier",
-        "model_type": "HistGradientBoostingClassifier + CalibratedClassifierCV (Isotonic)",
+        "model_version": active_version,
+        "model_name": meta.get("model_name", "Calibrated HistGradientBoostingClassifier"),
+        "model_type": meta.get("algorithm", "HistGradientBoostingClassifier + CalibratedClassifierCV (Isotonic)"),
+        "data_source": meta.get("data_source", "54 Open-Meteo ERA5 locations, 2019-2026" if active_version == "v2" else "10 Indian Metropolitan Hubs (Open-Meteo ERA5 Reanalysis 2022-2024)"),
+        "locations_count": meta.get("locations_count", 54 if active_version == "v2" else 10),
+        "period": meta.get("period", "2019-01-01 to 2026-10-28" if active_version == "v2" else "2022-01-01 to 2024-12-31"),
+        "splits": meta.get("splits", {
+            "train": "2019-01-01 to 2023-12-31",
+            "validation": "2024-01-01 to 2024-12-31",
+            "test": "2025-01-01 to 2026-10-28"
+        } if active_version == "v2" else {
+            "train": "2022-2023",
+            "test": "2024"
+        }),
+        "metrics": meta.get("test_metrics", {}),
         "lead_time": "1_hour (t+1 nowcast)",
-        "target_description": "probability of heavy warm convective rainfall (>2 mm/h with warm, humid conditions) in the next hour, used as a thunderstorm proxy",
+        "target_description": meta.get(
+            "target_description",
+            meta.get("label_definition", "probability of heavy rainfall / thunderstorm proxy")
+        ),
         "thermodynamic_indices_description": "Empirical thermodynamic approximations derived from surface temperature, dewpoint, and surface pressure using Bolton (1980) formulas; not NWP sounding integrations",
-        "optimal_threshold": settings.OPTIMAL_THRESHOLD,
-        "decision_rule": f"P(TS) >= {settings.OPTIMAL_THRESHOLD} signifies thunderstorm occurrence in the next hour",
+        "optimal_threshold": opt_thresh,
+        "decision_rule": f"P(TS) >= {opt_thresh:.4f} signifies thunderstorm occurrence in the next hour",
         "confidence_calibration": {
             "description": "Dynamic confidence score reflecting distance from decision boundary scaled by lead-time decay factor.",
-            "base_confidence_formula": "np.clip(0.50 + 0.45 * min(|P(TS) - 0.1860| / 0.50, 1.0), 0.50, 0.95)",
+            "base_confidence_formula": f"np.clip(0.50 + 0.45 * min(|P(TS) - {opt_thresh:.4f}| / 0.50, 1.0), 0.50, 0.95)",
             "lead_time_factor_formula": "max(0.60, 1.0 - (lead_hours / 6.0) * 0.40)",
             "final_confidence_formula": "round(base_confidence * lead_time_factor, 4)",
             "lead_factor_values": {
@@ -252,29 +276,29 @@ async def get_model_info():
             "formula": "round(min(ts_prob * 0.90, 0.99), 4)",
             "description": "Monotonic function of thunderstorm probability ensuring lightning never exceeds storm probability.",
         },
-        "alert_tiers": {
+        "alert_tiers": meta.get("alert_tiers", {
             "watch": settings.ALERT_TIER_WATCH,
             "advisory": settings.ALERT_TIER_ADVISORY,
             "warning": settings.ALERT_TIER_WARNING,
-        },
+        }),
         "severity_bands": {
             "method": "purely P(TS)-dependent threshold calibration",
             "very_severe": f"P(TS) >= {settings.SEVERE_PROB_THRESHOLD} (0.75)",
             "severe": f"P(TS) >= {settings.ALERT_PROB_THRESHOLD} (0.60)",
             "moderate": "P(TS) >= 0.40",
-            "weak": f"P(TS) >= {settings.OPTIMAL_THRESHOLD} (0.1860)",
-            "none": f"P(TS) < {settings.OPTIMAL_THRESHOLD} (0.1860)",
+            "weak": f"P(TS) >= {opt_thresh:.4f}",
+            "none": f"P(TS) < {opt_thresh:.4f}",
         },
-        "features": [
+        "features": meta.get("features", [
             "cape", "cin", "temperature_2m", "dewpoint_2m", "relative_humidity",
             "surface_pressure", "wind_speed_10m", "wind_direction_10m", "cloud_cover",
             "precipitable_water", "dew_point_depression", "cape_cin_ratio", "hour_sin",
             "hour_cos", "month_sin", "month_cos", "latitude", "longitude",
             "precip_1hr_ago", "precip_last_3hr", "storm_2hr_ago", "cloud_trend",
             "temp_trend", "pressure_trend"
-        ],
-        "num_features": 24,
-        "roc_auc": 0.9467,
+        ]),
+        "num_features": meta.get("num_features", 24),
+        "roc_auc": roc_auc,
         "disclaimer": DEFAULT_DISCLAIMER,
     }
 
@@ -369,6 +393,12 @@ async def get_precomputed_grid(request: Request):
                 cape=p.get("cape", 0.0),
                 cin=p.get("cin", 0.0),
                 precipitable_water=p.get("precipitable_water", 0.0),
+                display_tier=p.get("display_tier"),
+                hazard_tier=p.get("hazard_tier"),
+                hazard_flags=p.get("hazard_flags", []),
+                hazard_reasons=p.get("hazard_reasons", []),
+                out_of_training_range=p.get("out_of_training_range", False),
+                tier_source=p.get("tier_source"),
             )
             for p in data.get("points", [])
         ]
@@ -406,6 +436,12 @@ async def get_precomputed_grid(request: Request):
                             cape=p.get("cape", 0.0),
                             cin=p.get("cin", 0.0),
                             precipitable_water=p.get("precipitable_water", 0.0),
+                            display_tier=p.get("display_tier"),
+                            hazard_tier=p.get("hazard_tier"),
+                            hazard_flags=p.get("hazard_flags", []),
+                            hazard_reasons=p.get("hazard_reasons", []),
+                            out_of_training_range=p.get("out_of_training_range", False),
+                            tier_source=p.get("tier_source"),
                         )
                         for p in payload.get("points", [])
                     ]
@@ -444,6 +480,12 @@ async def get_precomputed_grid(request: Request):
                         cape=p.get("cape", 0.0),
                         cin=p.get("cin", 0.0),
                         precipitable_water=p.get("precipitable_water", 0.0),
+                        display_tier=p.get("display_tier"),
+                        hazard_tier=p.get("hazard_tier"),
+                        hazard_flags=p.get("hazard_flags", []),
+                        hazard_reasons=p.get("hazard_reasons", []),
+                        out_of_training_range=p.get("out_of_training_range", False),
+                        tier_source=p.get("tier_source"),
                     )
                     for p in payload.get("points", [])
                 ]

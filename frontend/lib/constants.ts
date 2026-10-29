@@ -48,7 +48,7 @@ export const INDIAN_CITIES: CityDef[] = [
 ];
 
 // Statistical & Operational Thresholds
-export const OPTIMAL_THRESHOLD = 0.186; // Statistical decision boundary
+export const OPTIMAL_THRESHOLD = 0.1798; // Statistical decision boundary (v2 default)
 export const ALERT_THRESHOLD = 0.30;   // Operational watch threshold (minimum for public alert)
 export const SEVERE_THRESHOLD = 0.60;  // Severe warning threshold
 
@@ -89,7 +89,13 @@ export const ALERT_TIERS = {
   },
 } as const;
 
-export function getAlertTierFromProbability(prob: number): "warning" | "advisory" | "watch" | null {
+export function getAlertTierFromProbability(
+  prob: number,
+  displayTier?: "warning" | "advisory" | "watch" | string | null
+): "warning" | "advisory" | "watch" | null {
+  if (displayTier === "warning" || displayTier === "advisory" || displayTier === "watch") {
+    return displayTier;
+  }
   if (prob >= ALERT_TIERS.warning.minProb) return "warning";
   if (prob >= ALERT_TIERS.advisory.minProb) return "advisory";
   if (prob >= ALERT_TIERS.watch.minProb) return "watch";
@@ -118,20 +124,20 @@ export const SEVERITY_CONFIG: Record<SeverityLevel, SeverityMeta> = {
     label: "None — low risk",
     shortLabel: "None",
     minProb: 0.0,
-    maxProb: 0.186,
+    maxProb: OPTIMAL_THRESHOLD,
     color: "#64748b", // slate-500
     bgClass: "bg-slate-500/15",
     borderClass: "border-slate-500/30",
     textClass: "text-slate-400 dark:text-slate-300",
     badgeClass: "bg-slate-500/20 text-slate-300 border-slate-500/40",
     chipClass: "bg-slate-600/20 text-slate-300 border-slate-500/30",
-    description: "Convective rain & thunderstorm probability is below operational threshold (< 18.6%).",
+    description: `Convective rain & thunderstorm probability is below operational threshold (< ${(OPTIMAL_THRESHOLD * 100).toFixed(1)}%).`,
   },
   weak: {
     level: "weak",
     label: "Weak",
     shortLabel: "Weak",
-    minProb: 0.186,
+    minProb: OPTIMAL_THRESHOLD,
     maxProb: 0.40,
     color: "#eab308", // yellow-500
     bgClass: "bg-yellow-500/15",
@@ -139,7 +145,7 @@ export const SEVERITY_CONFIG: Record<SeverityLevel, SeverityMeta> = {
     textClass: "text-yellow-600 dark:text-yellow-400",
     badgeClass: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40",
     chipClass: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    description: "Elevated convective moisture and surface heating; isolated showers possible (18.6–40%).",
+    description: `Elevated convective moisture and surface heating; isolated showers possible (${(OPTIMAL_THRESHOLD * 100).toFixed(1)}–40%).`,
   },
   moderate: {
     level: "moderate",
@@ -185,11 +191,11 @@ export const SEVERITY_CONFIG: Record<SeverityLevel, SeverityMeta> = {
   },
 };
 
-export function getSeverityFromProbability(prob: number): SeverityMeta {
+export function getSeverityFromProbability(prob: number, optimalThreshold: number = OPTIMAL_THRESHOLD): SeverityMeta {
   if (prob >= 0.75) return SEVERITY_CONFIG.very_severe;
   if (prob >= 0.60) return SEVERITY_CONFIG.severe;
   if (prob >= 0.40) return SEVERITY_CONFIG.moderate;
-  if (prob >= 0.186) return SEVERITY_CONFIG.weak;
+  if (prob >= optimalThreshold) return SEVERITY_CONFIG.weak;
   return SEVERITY_CONFIG.none;
 }
 

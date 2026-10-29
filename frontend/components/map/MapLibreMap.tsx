@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, memo, useCallback } from "react";
 import maplibregl, { Map, Marker } from "maplibre-gl";
-import { INITIAL_MAP_VIEW, MapStyleId, SEVERITY_CONFIG, INDIAN_CITIES } from "@/lib/constants";
+import { INITIAL_MAP_VIEW, MapStyleId, SEVERITY_CONFIG, INDIAN_CITIES, ALERT_TIERS } from "@/lib/constants";
 import {
   buildDefaultLightStyle,
   buildEnhancedDarkStyle,
@@ -20,6 +20,7 @@ import {
 } from "@/lib/types";
 import { formatProbability } from "@/lib/utils";
 import { generateLocalFieldGeoJson } from "@/lib/contour_generator";
+import { useModelInfo } from "@/lib/useModelInfo";
 import { LeadTimeOption } from "./LeadTimeSlider";
 import { Info, ShieldAlert } from "lucide-react";
 
@@ -79,6 +80,7 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
   onMapLoaded,
   className = "",
 }) => {
+  const { optimalThreshold } = useModelInfo();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
 
@@ -111,22 +113,33 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
   const buildGridGeoJson = useCallback((points: GridPointPrediction[]): GeoJSON.FeatureCollection => {
     return {
       type: "FeatureCollection",
-      features: points.map((pt, idx) => ({
-        type: "Feature",
-        id: idx,
-        properties: {
-          latitude: pt.latitude,
-          longitude: pt.longitude,
-          thunderstorm_probability: pt.thunderstorm_probability,
-          severity: pt.severity,
-          prob_pct: formatProbability(pt.thunderstorm_probability),
-          color: SEVERITY_CONFIG[pt.severity]?.color || "#64748b",
-        },
-        geometry: {
-          type: "Point",
-          coordinates: [pt.longitude, pt.latitude],
-        },
-      })),
+      features: points.map((pt, idx) => {
+        const tier = pt.display_tier || (pt.thunderstorm_probability >= 0.60 ? "warning" : pt.thunderstorm_probability >= 0.40 ? "advisory" : pt.thunderstorm_probability >= 0.30 ? "watch" : null);
+        const tierMeta = tier && ALERT_TIERS[tier as keyof typeof ALERT_TIERS] ? ALERT_TIERS[tier as keyof typeof ALERT_TIERS] : null;
+        const tierColor = tierMeta ? tierMeta.color : (SEVERITY_CONFIG[pt.severity]?.color || "#64748b");
+        const weight = tier === "warning" ? Math.max(pt.thunderstorm_probability, 0.8)
+                     : tier === "advisory" ? Math.max(pt.thunderstorm_probability, 0.5)
+                     : tier === "watch" ? Math.max(pt.thunderstorm_probability, 0.35)
+                     : pt.thunderstorm_probability;
+
+        return {
+          type: "Feature",
+          id: idx,
+          properties: {
+            latitude: pt.latitude,
+            longitude: pt.longitude,
+            thunderstorm_probability: pt.thunderstorm_probability,
+            severity: pt.severity,
+            prob_pct: formatProbability(pt.thunderstorm_probability),
+            color: tierColor,
+            weight: weight,
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [pt.longitude, pt.latitude],
+          },
+        };
+      }),
     };
   }, []);
 
@@ -160,7 +173,7 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
               visibility: currentLayers.showHeatmap ? "visible" : "none",
             },
             paint: {
-              "heatmap-weight": ["get", "thunderstorm_probability"],
+              "heatmap-weight": ["coalesce", ["get", "weight"], ["get", "thunderstorm_probability"]],
               "heatmap-intensity": [
                 "interpolate",
                 ["linear"],
@@ -176,7 +189,7 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
                 ["heatmap-density"],
                 0,
                 "rgba(100, 116, 139, 0)",
-                0.186,
+                optimalThreshold,
                 "rgba(234, 179, 8, 0.65)",
                 0.4,
                 "rgba(249, 115, 22, 0.8)",
@@ -454,7 +467,7 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
         });
       }
     },
-    [buildGridGeoJson]
+    [buildGridGeoJson, optimalThreshold]
   );
 
   // 1. Initialize MapLibre instance exactly ONCE with persisted initial style
@@ -612,14 +625,15 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
     }
 
     const { riskContours, impactZoneOutline, rainCells, stormTrack } = generateLocalFieldGeoJson(
-      activeReplayHour.local_field
+      activeReplayHour.local_field,
+      optimalThreshold
     );
 
     (map.getSource("replay-contours-source") as maplibregl.GeoJSONSource | undefined)?.setData(riskContours);
     (map.getSource("replay-impact-zone-source") as maplibregl.GeoJSONSource | undefined)?.setData(impactZoneOutline);
     (map.getSource("replay-rain-source") as maplibregl.GeoJSONSource | undefined)?.setData(rainCells);
     (map.getSource("replay-storm-track-source") as maplibregl.GeoJSONSource | undefined)?.setData(stormTrack);
-  }, [activeReplay, activeReplayHour]);
+  }, [activeReplay, activeReplayHour, optimalThreshold]);
 
   // 5. Update HTML City Markers with Alert Rings
   useEffect(() => {
@@ -631,7 +645,7 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
 
     if (!layers.showCityPins) return;
 
-    const citiesPredictionMap = new globalThis.Map<string, { prob: number; severity: SeverityLevel }>();
+    const citiesPredictionMap = new globalThis.Map<string, { prob: number; severity: SeverityLevel; display_tier?: string | null }>();
     if (citiesData?.cities) {
       Object.entries(citiesData.cities).forEach(([name, preds]) => {
         const p = preds.find((item) => item.lead_time_hours === selectedLead) || preds[0];
@@ -639,6 +653,7 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
           citiesPredictionMap.set(name.toLowerCase(), {
             prob: p.thunderstorm_probability,
             severity: (p.severity || "none") as SeverityLevel,
+            display_tier: p.display_tier,
           });
         }
       });
@@ -661,8 +676,10 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
       const probFormatted = formatProbability(prob);
 
       const matchedAlert = alertMap.get(city.name.toLowerCase());
-      const hasActiveAlert = layers.showAlertPins && (matchedAlert !== undefined || (prob !== null && prob >= 0.30));
-      const tier = matchedAlert?.tier || (prob !== null && prob >= 0.60 ? "warning" : prob !== null && prob >= 0.40 ? "advisory" : prob !== null && prob >= 0.30 ? "watch" : null);
+      const displayTier = pred?.display_tier || matchedAlert?.tier;
+      const fallbackTier = prob !== null && prob >= 0.60 ? "warning" : prob !== null && prob >= 0.40 ? "advisory" : prob !== null && prob >= 0.30 ? "watch" : null;
+      const tier = ((displayTier as "warning" | "advisory" | "watch") || fallbackTier);
+      const hasActiveAlert = layers.showAlertPins && (matchedAlert !== undefined || tier !== null);
       const isTest = matchedAlert?.is_test || false;
 
       const el = document.createElement("div");

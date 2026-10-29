@@ -8,11 +8,13 @@ from app.core.cache import meteo_cache
 from app.models.schemas import SeverityLevel, ThunderstormPrediction
 from app.services.data_ingestion import OpenMeteoService
 from app.services.feature_engineering import FeatureEngineer
+from app.config import settings
 from app.ml.models.thunderstorm_model import (
     LightningPredictor,
     SeverityClassifier,
     ThunderstormClassifier,
 )
+from app.services.hazard_guard import evaluate_hazards, resolve_display_tier
 
 logger = logging.getLogger("vajranowcast.inference")
 
@@ -24,6 +26,7 @@ class NowcastingService:
         self.data_service = OpenMeteoService()
         self.feature_engineer = FeatureEngineer()
         self.ts_model = ThunderstormClassifier()
+        self.thunderstorm_clf = self.ts_model
         self.lt_model = LightningPredictor()
         self.severity = SeverityClassifier()
 
@@ -122,6 +125,17 @@ class NowcastingService:
                 "pressure_trend": round(float(features.get("pressure_trend", 0.0)), 2),
             }
 
+            # Evaluate rule-based severe weather hazard guard
+            raw_hourly = weather_data.get("hourly", {})
+            now_idx, _ = self.feature_engineer.find_current_hour_index(weather_data, now)
+            target_idx = now_idx + target_hour_index
+            hazard_res = evaluate_hazards(
+                raw_hourly,
+                target_idx=target_idx,
+                model_version=getattr(self.thunderstorm_clf, "model_version", settings.MODEL_VERSION),
+            )
+            display_tier, tier_source = resolve_display_tier(ts_prob, hazard_res.hazard_tier)
+
             pred = ThunderstormPrediction(
                 latitude=lat,
                 longitude=lon,
@@ -142,6 +156,12 @@ class NowcastingService:
                 stale=is_stale,
                 cached_at=cached_at,
                 stale_reason=stale_reason,
+                hazard_flags=hazard_res.hazard_flags,
+                hazard_tier=hazard_res.hazard_tier,
+                hazard_reasons=hazard_res.reasons,
+                out_of_training_range=hazard_res.out_of_training_range,
+                display_tier=display_tier,
+                tier_source=tier_source,
             )
             results.append(pred)
 
@@ -268,6 +288,17 @@ class NowcastingService:
                     "pressure_trend": round(float(features.get("pressure_trend", 0.0)), 2),
                 }
 
+                # Evaluate rule-based severe weather hazard guard
+                raw_hourly = weather_data.get("hourly", {})
+                now_idx, _ = self.feature_engineer.find_current_hour_index(weather_data, now)
+                target_idx = now_idx + target_hour_index
+                hazard_res = evaluate_hazards(
+                    raw_hourly,
+                    target_idx=target_idx,
+                    model_version=getattr(self.thunderstorm_clf, "model_version", settings.MODEL_VERSION),
+                )
+                display_tier, tier_source = resolve_display_tier(ts_prob, hazard_res.hazard_tier)
+
                 pred = ThunderstormPrediction(
                     latitude=lat,
                     longitude=lon,
@@ -288,6 +319,12 @@ class NowcastingService:
                     stale=is_stale,
                     cached_at=cached_at,
                     stale_reason=stale_reason,
+                    hazard_flags=hazard_res.hazard_flags,
+                    hazard_tier=hazard_res.hazard_tier,
+                    hazard_reasons=hazard_res.reasons,
+                    out_of_training_range=hazard_res.out_of_training_range,
+                    display_tier=display_tier,
+                    tier_source=tier_source,
                 )
                 city_preds.append(pred.model_dump())
 

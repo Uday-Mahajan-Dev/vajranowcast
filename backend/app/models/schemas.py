@@ -46,6 +46,14 @@ class ThunderstormPrediction(BaseModel):
     stale_reason: Optional[str] = Field(None, description="Reason why stale data was returned")
     disclaimer: str = DEFAULT_DISCLAIMER
 
+    # Severe Weather Guard & Display Tier Fields
+    hazard_flags: List[str] = Field(default_factory=list, description="Rule-based severe weather hazard flags triggered")
+    hazard_tier: Optional[str] = Field(None, description="Hazard guard tier: 'watch', 'advisory', 'warning', or None")
+    hazard_reasons: List[str] = Field(default_factory=list, description="Plain English reasons for guard trigger")
+    out_of_training_range: bool = Field(False, description="True if conditions lie outside ML training distribution")
+    display_tier: Optional[str] = Field(None, description="Effective operational tier: more severe of ML tier and hazard_tier")
+    tier_source: Optional[str] = Field(None, description="'ml' | 'hazard_guard' | None indicating source of display_tier")
+
 
 class AlertResponse(BaseModel):
     """Active or generated severe weather alert structure."""
@@ -118,6 +126,12 @@ class GridPointPrediction(BaseModel):
     cape: float
     cin: float
     precipitable_water: float
+    display_tier: Optional[str] = None
+    hazard_tier: Optional[str] = None
+    hazard_flags: List[str] = Field(default_factory=list)
+    hazard_reasons: List[str] = Field(default_factory=list)
+    out_of_training_range: bool = False
+    tier_source: Optional[str] = None
 
 
 class GridResponse(BaseModel):
@@ -239,6 +253,12 @@ class CityPredictionItem(BaseModel):
     timestamp: Optional[str] = None
     prediction_time: Optional[str] = None
     contributing_factors: Optional[Dict[str, Any]] = None
+    hazard_flags: Optional[List[str]] = None
+    hazard_tier: Optional[str] = None
+    hazard_reasons: Optional[List[str]] = None
+    out_of_training_range: Optional[bool] = False
+    display_tier: Optional[str] = None
+    tier_source: Optional[str] = None
 
 
 class GenerateAlertsRequest(BaseModel):

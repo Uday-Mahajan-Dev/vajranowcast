@@ -74,7 +74,54 @@ def compute_thunderstorm_label(
         return 1 if (is_conv == 1 or is_heavy == 1) else 0
 
 
-def engineer_training_features_df(df_in: pd.DataFrame) -> pd.DataFrame:
+def compute_thunderstorm_label_v2(
+    weather_code: Union[float, int, pd.Series],
+    precipitation: Union[float, pd.Series],
+    temperature_2m: Union[float, pd.Series],
+    relative_humidity_2m: Union[float, pd.Series],
+    dew_point_2m: Union[float, pd.Series],
+) -> Union[int, pd.Series]:
+    """
+    V2 Thunderstorm label (cyclone/monsoon safe, no temperature_2m > 25 °C cliff):
+    1. weather_code in {80, 81, 82, 85, 91, 92, 93, 95, 96, 99}
+    2. OR (precipitation > 2.0 AND relative_humidity_2m > 65 AND (temperature_2m - dew_point_2m) < 8)
+    """
+    if isinstance(weather_code, pd.Series):
+        is_convective = weather_code.isin(CONVECTIVE_CODES).astype(int)
+        dp_dep = temperature_2m.fillna(25.0) - dew_point_2m.fillna(20.0)
+        is_heavy_convective = (
+            (precipitation.fillna(0.0) > 2.0)
+            & (relative_humidity_2m.fillna(50.0) > 65.0)
+            & (dp_dep < 8.0)
+        ).astype(int)
+        return ((is_convective == 1) | (is_heavy_convective == 1)).astype(int)
+    else:
+        wc = int(weather_code) if weather_code is not None and not np.isnan(weather_code) else 0
+        p = float(precipitation) if precipitation is not None and not np.isnan(precipitation) else 0.0
+        t = float(temperature_2m) if temperature_2m is not None and not np.isnan(temperature_2m) else 25.0
+        rh = float(relative_humidity_2m) if relative_humidity_2m is not None and not np.isnan(relative_humidity_2m) else 50.0
+        dp = float(dew_point_2m) if dew_point_2m is not None and not np.isnan(dew_point_2m) else 20.0
+
+        is_conv = 1 if wc in CONVECTIVE_CODES else 0
+        is_heavy = 1 if (p > 2.0 and rh > 65.0 and (t - dp) < 8.0) else 0
+        return 1 if (is_conv == 1 or is_heavy == 1) else 0
+
+
+def _get_active_model_version(version_override: Optional[str] = None) -> str:
+    if version_override is not None:
+        return version_override.lower()
+    try:
+        from app.config import settings
+        return getattr(settings, "MODEL_VERSION", "v1").lower()
+    except Exception:
+        import os
+        return os.environ.get("MODEL_VERSION", "v1").lower()
+
+
+def engineer_training_features_df(
+    df_in: pd.DataFrame,
+    model_version: Optional[str] = None,
+) -> pd.DataFrame:
     """
     Ported line-by-line from Cell 4 and Cell 5 of VajraMLModel.ipynb.
     Converts raw hourly columns into the 24 CLEAN_FEATURE_COLS.
@@ -89,9 +136,12 @@ def engineer_training_features_df(df_in: pd.DataFrame) -> pd.DataFrame:
     if "relative_humidity_2m" not in df.columns and "relative_humidity" in df.columns:
         df["relative_humidity_2m"] = df["relative_humidity"]
 
+    active_v = _get_active_model_version(model_version)
+    label_fn = compute_thunderstorm_label_v2 if active_v == "v2" else compute_thunderstorm_label
+
     # Compute thunderstorm label for storm lags
     if "thunderstorm" not in df.columns:
-        df["thunderstorm"] = compute_thunderstorm_label(
+        df["thunderstorm"] = label_fn(
             df["weather_code"],
             df["precipitation"],
             df["temperature_2m"],
@@ -174,11 +224,15 @@ def build_features_from_raw_slice(
     original_lat: float,
     original_lon: float,
     target_time: datetime,
+    model_version: Optional[str] = None,
 ) -> Dict[str, float]:
     """
     Build 24 CLEAN_FEATURE_COLS vector for a specific hour index from raw Open-Meteo hourly arrays.
     Uses target_idx as hour t, looking back to target_idx-1, target_idx-2, target_idx-3 for lags.
     """
+    active_v = _get_active_model_version(model_version)
+    label_fn = compute_thunderstorm_label_v2 if active_v == "v2" else compute_thunderstorm_label
+
     def _val(col: str, idx: int, default: float) -> float:
         arr = raw_hourly.get(col, [])
         if arr is not None and 0 <= idx < len(arr) and arr[idx] is not None:
@@ -230,7 +284,7 @@ def build_features_from_raw_slice(
         t_2 = _val("temperature_2m", target_idx - 2, 25.0)
         rh_2 = _val("relative_humidity_2m", target_idx - 2, 50.0)
         dp_2 = _val("dew_point_2m", target_idx - 2, 20.0)
-        storm_2hr_ago = float(compute_thunderstorm_label(wc_2, p_2, t_2, rh_2, dp_2))
+        storm_2hr_ago = float(label_fn(wc_2, p_2, t_2, rh_2, dp_2))
     else:
         storm_2hr_ago = 0.0
 

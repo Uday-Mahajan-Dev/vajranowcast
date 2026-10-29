@@ -16,12 +16,14 @@ backend_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(backend_dir))
 
 import httpx
+from app.config import settings
 from app.ml.models.thunderstorm_model import (
     LightningPredictor,
     SeverityClassifier,
     ThunderstormClassifier,
 )
 from app.services.feature_engineering import FeatureEngineer
+from app.services.hazard_guard import evaluate_hazards, resolve_display_tier
 
 logging.basicConfig(
     level=logging.INFO,
@@ -168,6 +170,12 @@ async def run_precomputation(
         lt_prob, _ = lt_model.predict(features, ts_prob)
         severity_str = sev_classifier.classify(ts_prob)
 
+        hourly = weather.get("hourly", {})
+        now_idx, _ = fe.find_current_hour_index(weather, now)
+        target_idx = now_idx + 1
+        hazard_res = evaluate_hazards(hourly, target_idx=target_idx, model_version=settings.MODEL_VERSION)
+        display_tier, tier_source = resolve_display_tier(float(ts_prob), hazard_res.hazard_tier)
+
         grid_points.append({
             "latitude": lat,
             "longitude": lon,
@@ -179,6 +187,12 @@ async def run_precomputation(
             "cape": round(float(features.get("cape", 0.0)), 1),
             "cin": round(float(features.get("cin", 0.0)), 1),
             "precipitable_water": round(float(features.get("precipitable_water", 0.0)), 1),
+            "display_tier": display_tier,
+            "hazard_tier": hazard_res.hazard_tier,
+            "hazard_flags": hazard_res.hazard_flags,
+            "hazard_reasons": hazard_res.reasons,
+            "out_of_training_range": hazard_res.out_of_training_range,
+            "tier_source": tier_source,
         })
 
     grid_payload = {
@@ -225,6 +239,12 @@ async def run_precomputation(
             p_lt, _ = lt_model.predict(feats, p_ts)
             sev = sev_classifier.classify(p_ts)
 
+            hourly = weather.get("hourly", {})
+            now_idx, _ = fe.find_current_hour_index(weather, now)
+            target_idx = now_idx + h_idx
+            hazard_res = evaluate_hazards(hourly, target_idx=target_idx, model_version=settings.MODEL_VERSION)
+            display_tier, tier_source = resolve_display_tier(float(p_ts), hazard_res.hazard_tier)
+
             city_preds.append({
                 "latitude": c_lat,
                 "longitude": c_lon,
@@ -239,21 +259,43 @@ async def run_precomputation(
                     "cape": round(float(feats.get("cape", 0.0)), 1),
                     "cin": round(float(feats.get("cin", 0.0)), 1),
                 },
+                "display_tier": display_tier,
+                "hazard_tier": hazard_res.hazard_tier,
+                "hazard_flags": hazard_res.hazard_flags,
+                "hazard_reasons": hazard_res.reasons,
+                "out_of_training_range": hazard_res.out_of_training_range,
+                "tier_source": tier_source,
             })
 
             # Check for alert condition at 1h lead time
-            if lead_h == 1.0 and p_ts >= 0.60:
+            if lead_h == 1.0 and display_tier is not None:
+                is_guard = (tier_source == "hazard_guard")
+                alert_type = "severe_weather_guard" if is_guard else "thunderstorm"
+                if is_guard:
+                    reasons_clean = [r.strip() for r in hazard_res.reasons if r.strip()]
+                    reasons_clean = [r[9:] if r.lower().startswith("forecast ") else r for r in reasons_clean]
+                    reasons_str = " and ".join(reasons_clean) if reasons_clean else "severe atmospheric conditions"
+                    pct = int(round(p_ts * 100))
+                    msg = (
+                        f"{display_tier.capitalize()} (rule-based): forecast {reasons_str}. "
+                        f"ML storm probability {pct}% — conditions are outside the model's training range."
+                    )
+                else:
+                    pct = int(round(p_ts * 100))
+                    msg = f"⚠️ {sev.upper()} thunderstorm expected in {c_name} within 1h (Probability: {pct}%)"
+
                 alerts_list.append({
                     "city": c_name,
                     "latitude": c_lat,
                     "longitude": c_lon,
-                    "alert_type": "thunderstorm",
+                    "alert_type": alert_type,
                     "severity": sev,
+                    "tier": display_tier,
                     "thunderstorm_probability": round(float(p_ts), 4),
                     "lightning_probability": round(float(p_lt), 4),
                     "valid_from": now.isoformat(),
                     "valid_until": (now + timedelta(hours=2)).isoformat(),
-                    "message": f"⚠️ {sev.upper()} thunderstorm expected in {c_name} within 1h (Probability: {int(p_ts*100)}%)",
+                    "message": msg,
                     "is_active": True,
                 })
 
@@ -274,69 +316,42 @@ async def run_precomputation(
 
     logger.info(f"Successfully published precomputed artifacts to {output_dir}")
 
-    # 5. If backend URL and Admin Token are provided, wake Render and post precomputed alerts
+    # 5. If backend URL and Admin Token are provided, trigger backend alert generation
     if backend_url and admin_token:
-        logger.info(f"Triggering Render alert generation at {backend_url}...")
+        logger.info(f"Triggering backend alert generation at {backend_url}...")
         try:
-            await wake_render_and_generate_alerts(backend_url, admin_token, cities_payload)
+            await trigger_backend_alert_generation(backend_url, admin_token, cities_payload)
         except Exception as e:
-            logger.warning(f"Failed to post alerts to Render: {e}. Precomputation artifacts remain valid.")
+            logger.warning(f"Failed to post alerts to backend: {e}. Precomputation artifacts remain valid.")
     else:
-        logger.info("Skipping Render alert generation: backend_url or admin_token not provided.")
+        logger.info("Skipping backend alert generation: backend_url or admin_token not provided.")
 
     return True
 
 
-async def wake_render_and_generate_alerts(
+async def trigger_backend_alert_generation(
     backend_url: str,
     admin_token: str,
     cities_payload: dict,
 ) -> bool:
     """
-    Ping /health on Render (up to 3 retries, 30s apart) to wake sleeping instance,
-    then POST precomputed city predictions with X-Admin-Token to /api/v1/alerts/generate.
+    POST precomputed city predictions with X-Admin-Token to /api/v1/alerts/generate on Vercel backend.
     """
-    health_url = f"{backend_url.rstrip('/')}/health"
     generate_url = f"{backend_url.rstrip('/')}/api/v1/alerts/generate"
 
-    logger.info(f"Connecting to Render backend at {backend_url} to wake service...")
-    async with httpx.AsyncClient(timeout=45.0) as client:
-        # Step 1: Health check retry loop (wake-up)
-        healthy = False
-        for attempt in range(1, 4):
-            try:
-                logger.info(f"Health check attempt {attempt}/3 at {health_url}...")
-                resp = await client.get(health_url)
-                if resp.status_code == 200:
-                    logger.info("Render backend is awake and healthy.")
-                    healthy = True
-                    break
-                else:
-                    logger.warning(f"Health check returned status {resp.status_code}")
-            except Exception as e:
-                logger.warning(f"Health check attempt {attempt} failed: {e}")
-
-            if attempt < 3:
-                logger.info("Waiting 30 seconds for Render instance to spin up...")
-                await asyncio.sleep(30)
-
-        if not healthy:
-            logger.warning("Render backend did not respond to health checks. Skipping alert generation.")
-            return False
-
-        # Step 2: POST precomputed city predictions
-        headers = {
-            "Content-Type": "application/json",
-            "X-Admin-Token": admin_token,
-        }
-        body = {
-            "cities": cities_payload.get("cities", {}),
-        }
+    headers = {
+        "Content-Type": "application/json",
+        "X-Admin-Token": admin_token,
+    }
+    body = {
+        "cities": cities_payload.get("cities", {}),
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             logger.info(f"Posting precomputed city predictions to {generate_url}...")
             post_resp = await client.post(generate_url, json=body, headers=headers)
             if post_resp.status_code == 200:
-                logger.info("Successfully triggered alert generation on Render.")
+                logger.info("Successfully triggered alert generation on backend.")
                 return True
             else:
                 logger.warning(f"Alert generation returned status {post_resp.status_code}: {post_resp.text}")
@@ -357,8 +372,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--backend-url",
         type=str,
-        default=os.environ.get("RENDER_BACKEND_URL") or os.environ.get("BACKEND_URL"),
-        help="Backend URL to wake and post precomputed alerts to",
+        default=os.environ.get("BACKEND_URL") or os.environ.get("RENDER_BACKEND_URL"),
+        help="Backend URL to post precomputed alerts to",
     )
     parser.add_argument(
         "--admin-token",

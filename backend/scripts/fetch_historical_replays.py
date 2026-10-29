@@ -96,20 +96,38 @@ HISTORICAL_EVENTS = [
         "thunderstorm_confirmed": True,
         "verified_by_human": False,
     },
+    {
+        "event_id": "visakhapatnam-cyclone-arnab-20261027",
+        "event_name": "Cyclone Arnab Visakhapatnam Convective Squall & Rainbands",
+        "city": "Visakhapatnam",
+        "state": "Andhra Pradesh",
+        "latitude": 17.69,
+        "longitude": 83.22,
+        "date": "2026-10-27",
+        "hour_ist": "12:00 IST",
+        "hour_utc": "06:30 UTC",
+        "hour_idx": 12,
+        "source_url": "https://mausam.imd.gov.in",
+        "synoptic_summary": "Intense cyclonic convective rainbands and gale squalls lashed coastal Andhra Pradesh during Cyclone Arnab.",
+        "thunderstorm_confirmed": True,
+        "verified_by_human": False,
+        "is_forecast_api": True,
+    },
 ]
 
 CONVECTIVE_CODES = {80, 81, 82, 85, 91, 92, 93, 95, 96, 99}
 
 
 async def fetch_and_compute_event(client: httpx.AsyncClient, event_meta: dict) -> dict:
-    """Fetch Open-Meteo default archive data across a 3-day window for a 5x5 local grid (25 points),
+    """Fetch Open-Meteo archive or forecast API data across a window for a 5x5 local grid (25 points),
     compute features via canonical training pipeline, evaluate point timeline + verdict, and generate local risk fields."""
     lat = event_meta["latitude"]
     lon = event_meta["longitude"]
     date_str = event_meta["date"]
     h_idx = event_meta["hour_idx"]
+    is_forecast = event_meta.get("is_forecast_api", False)
 
-    # Calculate 3-day window covering (day - 1) to (day + 1) for full t-6 to t+6 timeline
+    # Calculate window
     event_dt = datetime.strptime(date_str, "%Y-%m-%d")
     start_date = (event_dt - timedelta(days=1)).strftime("%Y-%m-%d")
     end_date = (event_dt + timedelta(days=1)).strftime("%Y-%m-%d")
@@ -129,23 +147,37 @@ async def fetch_and_compute_event(client: httpx.AsyncClient, event_meta: dict) -
     lat_str = ",".join(str(p["lat"]) for p in grid_points)
     lon_str = ",".join(str(p["lon"]) for p in grid_points)
 
-    # Use default archive API without models param (exact match to training notebook)
-    # Include 700 hPa wind variables for storm track steering
-    params = {
-        "latitude": lat_str,
-        "longitude": lon_str,
-        "start_date": start_date,
-        "end_date": end_date,
-        "hourly": (
-            "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
-            "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code,"
-            "wind_speed_700hPa,wind_direction_700hPa"
-        ),
-        "timezone": "Asia/Kolkata",
-    }
+    if is_forecast:
+        api_url = "https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": lat_str,
+            "longitude": lon_str,
+            "past_days": 5,
+            "forecast_days": 1,
+            "hourly": (
+                "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
+                "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code,"
+                "wind_speed_700hPa,wind_direction_700hPa"
+            ),
+            "timezone": "Asia/Kolkata",
+        }
+    else:
+        api_url = ARCHIVE_URL
+        params = {
+            "latitude": lat_str,
+            "longitude": lon_str,
+            "start_date": start_date,
+            "end_date": end_date,
+            "hourly": (
+                "temperature_2m,relative_humidity_2m,dew_point_2m,surface_pressure,"
+                "wind_speed_10m,wind_direction_10m,cloud_cover,precipitation,weather_code,"
+                "wind_speed_700hPa,wind_direction_700hPa"
+            ),
+            "timezone": "Asia/Kolkata",
+        }
 
-    logger.info(f"Fetching 25-point batch archive for {event_meta['event_name']}...")
-    response = await client.get(ARCHIVE_URL, params=params, timeout=45.0)
+    logger.info(f"Fetching 25-point batch from {api_url} for {event_meta['event_name']}...")
+    response = await client.get(api_url, params=params, timeout=45.0)
     response.raise_for_status()
     raw_batch = response.json()
     if isinstance(raw_batch, dict):

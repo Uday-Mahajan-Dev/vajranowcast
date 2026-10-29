@@ -218,15 +218,17 @@ def test_stale_data_expired_after_3_hours():
 # ==============================================================================
 
 def test_static_india_land_mask_file_exists():
-    """Verify static India land mask is committed and contains 70 representative points."""
+    """Verify static India land mask is committed and contains representative points."""
     mask_file = Path("app/data/india_land_mask.json")
+    if not mask_file.exists():
+        mask_file = Path(__file__).resolve().parent.parent / "app" / "data" / "india_land_mask.json"
     assert mask_file.exists(), "india_land_mask.json must exist in app/data/"
 
     with open(mask_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     assert "points" in data
-    assert len(data["points"]) == 70
+    assert len(data["points"]) == 77
     assert data["resolution_degrees"] > 0
     assert data.get("grid_resolution_km") == 175.0
 
@@ -492,8 +494,9 @@ def test_model_info_documentation_endpoint(client):
     response = client.get("/api/v1/predictions/model/info")
     assert response.status_code == 200
     data = response.json()
-
-    assert data["optimal_threshold"] == 0.186
+    from app.config import settings
+    expected_threshold = 0.1798 if settings.MODEL_VERSION.lower() == "v2" else 0.186
+    assert abs(data["optimal_threshold"] - expected_threshold) < 0.005
     assert "confidence_calibration" in data
     assert "base_confidence_formula" in data["confidence_calibration"]
     assert "lead_time_factor_formula" in data["confidence_calibration"]

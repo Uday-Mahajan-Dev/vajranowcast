@@ -303,10 +303,29 @@ export async function fetchHistoricalVerification(
   return handleResponse<HistoricalResponse>(res);
 }
 
+let cachedModelInfoPromise: Promise<ModelInfo> | null = null;
+
 export async function fetchModelInfo(signal?: AbortSignal): Promise<ModelInfo> {
-  const url = `${API_BASE_URL}/api/v1/predictions/model/info`;
-  const res = await fetchWithTimeout(url, { signal }, 10000);
-  return handleResponse<ModelInfo>(res);
+  if (cachedModelInfoPromise && !signal) {
+    return cachedModelInfoPromise;
+  }
+  const promise = (async () => {
+    const url = `${API_BASE_URL}/api/v1/predictions/model/info`;
+    const res = await fetchWithTimeout(url, { signal }, 10000);
+    return handleResponse<ModelInfo>(res);
+  })();
+
+  if (!signal) {
+    cachedModelInfoPromise = promise.catch((err) => {
+      cachedModelInfoPromise = null;
+      throw err;
+    });
+  }
+  return promise;
+}
+
+export async function fetchModelInfoCached(): Promise<ModelInfo> {
+  return fetchModelInfo();
 }
 
 // ----------------------------------------------------------------------

@@ -6,7 +6,7 @@
 
 import { contours } from "d3-contour";
 import { LocalField, LocalFieldCell } from "./types";
-import { ALERT_TIERS } from "./constants";
+import { ALERT_TIERS, OPTIMAL_THRESHOLD } from "./constants";
 
 export interface ContourLayerData {
   riskContours: GeoJSON.FeatureCollection;
@@ -19,14 +19,11 @@ export interface ContourLayerData {
 }
 
 const SEVERITY_CONTOUR_METAS: Record<number, { label: string; color: string; fillOpacity: number; strokeColor: string }> = {
-  0.186: { label: "Weak Risk", color: "#0d9488", fillOpacity: 0.25, strokeColor: "#14b8a6" },
   0.30:  { label: "Watch Impact Zone", color: "#eab308", fillOpacity: 0.35, strokeColor: "#facc15" },
   0.40:  { label: "Advisory", color: "#f97316", fillOpacity: 0.45, strokeColor: "#fb923c" },
   0.60:  { label: "Severe", color: "#ef4444", fillOpacity: 0.55, strokeColor: "#f87171" },
   0.75:  { label: "Very Severe", color: "#9333ea", fillOpacity: 0.65, strokeColor: "#c084fc" },
 };
-
-const CONTOUR_THRESHOLDS = [0.186, 0.30, 0.40, 0.60, 0.75];
 
 /**
  * Bilinearly interpolates a 5x5 grid of numbers to an NxN resolution grid for smooth contour rendering.
@@ -61,7 +58,10 @@ function interpolateGrid(grid5x5: number[][], N = 25): number[] {
   return result;
 }
 
-export function generateLocalFieldGeoJson(field?: LocalField | null): ContourLayerData {
+export function generateLocalFieldGeoJson(
+  field?: LocalField | null,
+  optimalThreshold: number = OPTIMAL_THRESHOLD
+): ContourLayerData {
   const emptyFC: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
   if (!field || !field.cells || field.cells.length < 25) {
@@ -113,7 +113,11 @@ export function generateLocalFieldGeoJson(field?: LocalField | null): ContourLay
       }
     });
 
-    grid5x5[bestRow][bestCol] = cell.prob;
+    const effectiveProb = cell.display_tier === "warning" ? Math.max(cell.prob, 0.60)
+                        : cell.display_tier === "advisory" ? Math.max(cell.prob, 0.40)
+                        : cell.display_tier === "watch" ? Math.max(cell.prob, 0.30)
+                        : cell.prob;
+    grid5x5[bestRow][bestCol] = effectiveProb;
     precip5x5[bestRow][bestCol] = cell.precipitation;
   });
 
@@ -121,9 +125,10 @@ export function generateLocalFieldGeoJson(field?: LocalField | null): ContourLay
   const N = 25;
   const interpolatedVals = interpolateGrid(grid5x5, N);
 
+  const contourThresholds = [optimalThreshold, 0.30, 0.40, 0.60, 0.75];
   const contourGenerator = contours()
     .size([N, N])
-    .thresholds(CONTOUR_THRESHOLDS);
+    .thresholds(contourThresholds);
 
   const rawContours = contourGenerator(interpolatedVals);
 
@@ -133,12 +138,15 @@ export function generateLocalFieldGeoJson(field?: LocalField | null): ContourLay
 
   rawContours.forEach((c) => {
     const thresh = c.value;
-    const meta = SEVERITY_CONTOUR_METAS[thresh] || {
-      label: `Risk ≥ ${(thresh * 100).toFixed(0)}%`,
-      color: "#0d9488",
-      fillOpacity: 0.3,
-      strokeColor: "#14b8a6",
-    };
+    const isOptimalThresh = Math.abs(thresh - optimalThreshold) < 0.005;
+    const meta = isOptimalThresh
+      ? { label: "Weak Risk", color: "#0d9488", fillOpacity: 0.25, strokeColor: "#14b8a6" }
+      : SEVERITY_CONTOUR_METAS[thresh] || {
+          label: `Risk ≥ ${(thresh * 100).toFixed(0)}%`,
+          color: "#0d9488",
+          fillOpacity: 0.3,
+          strokeColor: "#14b8a6",
+        };
 
     const transformedCoords = c.coordinates.map((polygon) =>
       polygon.map((ring) =>
