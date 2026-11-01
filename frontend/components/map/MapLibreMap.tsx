@@ -645,13 +645,15 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
 
     if (!layers.showCityPins) return;
 
-    const citiesPredictionMap = new globalThis.Map<string, { prob: number; severity: SeverityLevel; display_tier?: string | null }>();
+    const citiesPredictionMap = new globalThis.Map<string, { prob: number | null; severity: SeverityLevel; display_tier?: string | null }>();
     if (citiesData?.cities) {
       Object.entries(citiesData.cities).forEach(([name, preds]) => {
+        if (!Array.isArray(preds) || preds.length === 0) return;
         const p = preds.find((item) => item.lead_time_hours === selectedLead) || preds[0];
         if (p) {
+          const rawProb = p.thunderstorm_probability ?? (p as any).prob ?? (p as any).probability;
           citiesPredictionMap.set(name.toLowerCase(), {
-            prob: p.thunderstorm_probability,
+            prob: rawProb !== undefined && rawProb !== null ? rawProb : null,
             severity: (p.severity || "none") as SeverityLevel,
             display_tier: p.display_tier,
           });
@@ -670,7 +672,7 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
 
     INDIAN_CITIES.forEach((city) => {
       const pred = citiesPredictionMap.get(city.name.toLowerCase());
-      const prob = pred ? pred.prob : null;
+      const prob = pred && pred.prob !== undefined && pred.prob !== null ? pred.prob : null;
       const severity = pred ? pred.severity : "none";
       const sevColor = SEVERITY_CONFIG[severity]?.color || "#64748b";
       const probFormatted = formatProbability(prob);
@@ -683,9 +685,10 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
       const isTest = matchedAlert?.is_test || false;
 
       const el = document.createElement("div");
-      el.className = "vajra-city-pin group flex flex-col items-center cursor-pointer select-none";
-      el.style.width = "48px";
-      el.style.height = "56px";
+      el.className = "vajra-city-pin group flex flex-col items-center cursor-pointer select-none pointer-events-auto";
+      el.style.width = "max-content";
+      el.style.minWidth = "48px";
+      el.style.height = "auto";
 
       let ringHtml = "";
       if (hasActiveAlert && tier) {
@@ -724,8 +727,8 @@ const MapLibreMapComponent: React.FC<MapLibreMapProps> = ({
                 : '<svg viewBox="0 0 24 24" fill="white" class="h-4 w-4 drop-shadow-sm"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>'
             }
           </div>
-          <div class="mt-1 flex flex-col items-center rounded-md bg-slate-950/85 px-1.5 py-0.5 text-white backdrop-blur-sm shadow-xs border ${isTest ? 'border-amber-400' : 'border-white/20'}">
-            <span class="text-[10px] font-bold leading-none flex items-center gap-0.5">
+          <div class="mt-1 flex flex-col items-center rounded-md bg-slate-950/90 px-2 py-0.5 text-white backdrop-blur-md shadow-md border ${isTest ? 'border-amber-400' : 'border-white/20'} whitespace-nowrap">
+            <span class="text-[10px] font-bold leading-none flex items-center gap-0.5 whitespace-nowrap">
               ${city.name}
             </span>
             <span class="text-[9px] font-semibold tabular-nums text-teal-300 leading-tight">${probFormatted}</span>

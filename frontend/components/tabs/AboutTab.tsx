@@ -182,13 +182,13 @@ export const AboutTab: React.FC<AboutTabProps> = ({
         </div>
       </div>
 
-      {/* Severe Weather Guard (Rule-Based Safety Net) */}
+      {/* Severe Weather Signals */}
       <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 shadow-sm dark:border-slate-800/80 dark:bg-slate-900/60 space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-          <ShieldAlert className="h-3.5 w-3.5" /> Severe Weather Guard (Synoptic Safety Backstop)
+          <ShieldAlert className="h-3.5 w-3.5" /> Severe Weather Signals
         </h3>
         <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-          While Model v2 directly predicts rainfall in cool and warm regimes, an automated deterministic Severe Weather Guard monitors raw forecast conditions for extreme synoptic dynamics: cyclonic gales (≥ 62 km/h) and rapid barometric pressure drops (&lt; 995 hPa). This rule-based safety backstop guarantees critical warnings are raised even in unmodeled deep low-pressure extremes.
+          Alert levels combine the ML thunderstorm probability with severe-weather signals from the forecast (thunderstorm codes, rain rate, wind and pressure trends).
         </p>
       </div>
 

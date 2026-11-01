@@ -18,14 +18,16 @@ import {
 } from "./types";
 import { GEOCODING_API_URL, COVERAGE_BOUNDS, OPEN_METEO_PARAMS_SPEC, OPEN_METEO_FORECAST_URL } from "./constants";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
+  .split(",")[0]
+  .trim()
+  .replace(/\/$/, "");
 
-const rawStaticBase = (process.env.NEXT_PUBLIC_STATIC_BASE_URL || "").trim();
-const isStaticBaseValid =
-  rawStaticBase.startsWith("http://") ||
-  rawStaticBase.startsWith("https://") ||
-  rawStaticBase.startsWith("/");
-const STATIC_BASE_URL = isStaticBaseValid ? rawStaticBase.replace(/\/$/, "") : null;
+const rawStaticBases = (process.env.NEXT_PUBLIC_STATIC_BASE_URL || "")
+  .split(",")
+  .map((s) => s.trim().replace(/\/$/, ""))
+  .filter((s) => s.startsWith("http://") || s.startsWith("https://") || s.startsWith("/"));
+const STATIC_BASE_URL = rawStaticBases.length > 0 ? rawStaticBases[0] : null;
 
 let hasLoggedGridSource = false;
 
@@ -237,9 +239,42 @@ export async function fetchCitiesNowcast(
   signal?: AbortSignal,
   onColdStart?: (isWaking: boolean) => void
 ): Promise<CitiesNowcastResponse> {
+  // 1. Try static CDN or local /data/cities_latest.json first (ensures fresh precomputed data)
+  const candidateUrls = [
+    "/data/cities_latest.json",
+    ...rawStaticBases.map((base) => `${base}/cities_latest.json`),
+  ];
+  for (const candidateUrl of candidateUrls) {
+    try {
+      const fbRes = await fetchWithTimeout(candidateUrl, { signal }, 3000);
+      if (fbRes.ok) {
+        const payload = (await fbRes.json()) as CitiesNowcastResponse;
+        if (payload?.cities && Object.keys(payload.cities).length > 0) {
+          return payload;
+        }
+      }
+    } catch {
+      // Continue to next candidate
+    }
+  }
+
+  // 2. Fall back to backend /api/v1/predictions/nowcast/cities
   const url = `${API_BASE_URL}/api/v1/predictions/nowcast/cities`;
-  const res = await fetchWithTimeout(url, { signal }, 70000, onColdStart);
-  return handleResponse<CitiesNowcastResponse>(res);
+  try {
+    const res = await fetchWithTimeout(url, { signal }, 70000, onColdStart);
+    const data = await handleResponse<CitiesNowcastResponse>(res);
+    return data;
+  } catch (err: any) {
+    if (err?.name === "AbortError") throw err;
+    console.warn("Backend fetchCitiesNowcast failed:", err);
+  }
+
+  return {
+    timestamp: new Date().toISOString(),
+    cities_count: 0,
+    cities: {},
+    disclaimer: DEFAULT_DISCLAIMER,
+  };
 }
 
 export async function fetchGrid(

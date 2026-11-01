@@ -274,11 +274,11 @@ async def run_precomputation(
                 if is_guard:
                     reasons_clean = [r.strip() for r in hazard_res.reasons if r.strip()]
                     reasons_clean = [r[9:] if r.lower().startswith("forecast ") else r for r in reasons_clean]
-                    reasons_str = " and ".join(reasons_clean) if reasons_clean else "severe atmospheric conditions"
+                    reasons_str = ", ".join(reasons_clean) if reasons_clean else "severe atmospheric conditions"
                     pct = int(round(p_ts * 100))
                     msg = (
-                        f"{display_tier.capitalize()} (rule-based): forecast {reasons_str}. "
-                        f"ML storm probability {pct}% — conditions are outside the model's training range."
+                        f"{display_tier.capitalize()}: severe weather signals near {c_name}: {reasons_str}. "
+                        f"Thunderstorm probability {pct}%."
                     )
                 else:
                     pct = int(round(p_ts * 100))

@@ -182,11 +182,11 @@ class AlertService:
                     if is_guard:
                         reasons_clean = [r.strip() for r in hazard_reasons if r.strip()]
                         reasons_clean = [r[9:] if r.lower().startswith("forecast ") else r for r in reasons_clean]
-                        reasons_str = " and ".join(reasons_clean) if reasons_clean else "severe atmospheric conditions"
+                        reasons_str = ", ".join(reasons_clean) if reasons_clean else "severe atmospheric conditions"
                         pct = int(round(ts_prob * 100))
                         msg = (
-                            f"{tier.capitalize()} (rule-based): forecast {reasons_str}. "
-                            f"ML storm probability {pct}% — conditions are outside the model's training range."
+                            f"{tier.capitalize()}: severe weather signals near {city}: {reasons_str}. "
+                            f"Thunderstorm probability {pct}%."
                         )
                     else:
                         msg = self.build_tier_message(city, tier, ts_prob, lead_hours)

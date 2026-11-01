@@ -144,7 +144,8 @@ export const ResponsiveSheet: React.FC<ResponsiveSheetProps> = ({
 
     const list = Object.entries(citiesData.cities).map(([name, preds]) => {
       const p = preds.find((item) => item.lead_time_hours === selectedLead) || preds[0] || {};
-      const prob = p.thunderstorm_probability ?? 0;
+      const rawProb = p.thunderstorm_probability ?? (p as any).prob ?? (p as any).probability;
+      const prob = rawProb !== undefined && rawProb !== null ? rawProb : null;
       const severity = (p.severity || "none") as SeverityLevel;
       const staticCity = INDIAN_CITIES.find((c) => c.name.toLowerCase() === name.toLowerCase());
       const state = staticCity?.state || "India";
@@ -154,7 +155,7 @@ export const ResponsiveSheet: React.FC<ResponsiveSheetProps> = ({
       return { name, state, lat, lon, prob, severity, temp };
     });
 
-    return list.sort((a, b) => b.prob - a.prob).slice(0, 5);
+    return list.sort((a, b) => (b.prob ?? -1) - (a.prob ?? -1)).slice(0, 5);
   }, [citiesData, selectedLead]);
 
   // Map Overview Content (Default when no place or replay is active)
@@ -249,7 +250,7 @@ export const ResponsiveSheet: React.FC<ResponsiveSheetProps> = ({
         {!isLoadingCities && topCities.length > 0 && (
           <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {topCities.map((city) => {
-              const sev = getSeverityFromProbability(city.prob);
+              const sev = getSeverityFromProbability(city.prob ?? 0);
               return (
                 <div
                   key={city.name}

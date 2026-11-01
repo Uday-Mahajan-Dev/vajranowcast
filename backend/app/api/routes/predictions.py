@@ -344,7 +344,7 @@ async def get_cities_nowcast(request: Request):
     # 3. Fallback to local files
     local_cities_file = DATA_DIR / "cities_latest.json"
     if not local_cities_file.exists():
-        local_cities_file = Path(__file__).resolve().parent.parent.parent.parent / "frontend" / "public" / "data" / "cities_latest.json"
+        local_cities_file = Path(__file__).resolve().parents[4] / "frontend" / "public" / "data" / "cities_latest.json"
 
     if local_cities_file.exists():
         try:

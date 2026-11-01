@@ -214,22 +214,35 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
               })()}
             </div>
 
-            {/* Severe Weather Guard Alert Banner */}
+            {/* Severe Weather Signals Alert Banner */}
             {activePred.tier_source === "hazard_guard" && (
               <div
                 id="hazard-guard-banner"
                 className={`mt-3 rounded-xl border p-3 ${
                   activePred.display_tier === "warning"
                     ? "border-red-500/50 bg-red-500/15 text-red-950 dark:text-red-200"
+                    : activePred.display_tier === "watch"
+                    ? "border-yellow-500/50 bg-yellow-500/15 text-yellow-950 dark:text-yellow-200"
                     : "border-orange-500/50 bg-orange-500/15 text-orange-950 dark:text-orange-200"
                 }`}
               >
                 <div className="flex items-start gap-2">
                   <ShieldAlert className={`h-4 w-4 shrink-0 mt-0.5 ${
-                    activePred.display_tier === "warning" ? "text-red-600 dark:text-red-400" : "text-orange-600 dark:text-orange-400"
+                    activePred.display_tier === "warning"
+                      ? "text-red-600 dark:text-red-400"
+                      : activePred.display_tier === "watch"
+                      ? "text-yellow-600 dark:text-yellow-400"
+                      : "text-orange-600 dark:text-orange-400"
                   }`} />
-                  <div className="text-xs font-semibold leading-relaxed">
-                    Severe weather detected: {activePred.hazard_reasons && activePred.hazard_reasons.length > 0 ? activePred.hazard_reasons.join(", ") : "extreme atmospheric conditions"}. Rule-based safety check — the AI model was not trained on cyclone conditions.
+                  <div>
+                    <div className="text-xs font-bold leading-tight">
+                      Severe weather signals
+                    </div>
+                    <div className="text-xs font-medium leading-relaxed mt-0.5">
+                      {activePred.hazard_reasons && activePred.hazard_reasons.length > 0
+                        ? activePred.hazard_reasons.join(" · ")
+                        : "Extreme atmospheric conditions"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -244,12 +257,6 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
                 <div className="text-3xl font-black text-slate-900 dark:text-white mt-0.5">
                   {formatProbability(activePred.thunderstorm_probability)}
                 </div>
-                {activePred.out_of_training_range && (
-                  <div id="out-of-range-note" className="text-[11px] font-medium text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
-                    <Info className="h-3.5 w-3.5 shrink-0" />
-                    <span>Outside model training conditions</span>
-                  </div>
-                )}
               </div>
 
               <div className="text-right space-y-1">
@@ -493,8 +500,8 @@ export const PlaceCard: React.FC<PlaceCardProps> = ({
               <div className="mt-3 space-y-2.5 text-xs text-slate-600 dark:text-slate-300 border-t border-slate-200/60 pt-3 dark:border-slate-800/60 animate-in fade-in-50 leading-relaxed">
                 {activePred.hazard_reasons && activePred.hazard_reasons.length > 0 && (
                   <div className="rounded-xl border border-amber-500/30 bg-amber-500/15 p-2.5 text-xs text-amber-900 dark:text-amber-200">
-                    <span className="font-bold text-amber-700 dark:text-amber-400">Severe Weather Guard: </span>
-                    <span>{activePred.hazard_reasons.join(", ")} (Rule-based safety check active)</span>
+                    <span className="font-bold text-amber-700 dark:text-amber-400">Severe weather signals: </span>
+                    <span>{activePred.hazard_reasons.join(" · ")}</span>
                   </div>
                 )}
                 <div className="rounded-xl bg-slate-100/80 p-2.5 dark:bg-slate-800/60 font-medium text-slate-800 dark:text-slate-200">

@@ -30,7 +30,8 @@ export const CitiesTab: React.FC<CitiesTabProps> = ({
 
     const items = Object.entries(data.cities).map(([name, preds]) => {
       const p = preds.find((item) => item.lead_time_hours === selectedLead) || preds[0] || {};
-      const prob = p.thunderstorm_probability ?? 0;
+      const rawProb = p.thunderstorm_probability ?? (p as any).prob ?? (p as any).probability;
+      const prob = rawProb !== undefined && rawProb !== null ? rawProb : null;
       const severity = (p.severity || "none") as SeverityLevel;
       const staticCity = INDIAN_CITIES.find((c) => c.name.toLowerCase() === name.toLowerCase());
       const state = staticCity?.state || "India";
@@ -51,8 +52,8 @@ export const CitiesTab: React.FC<CitiesTabProps> = ({
       };
     });
 
-    // Sort by thunderstorm probability descending
-    return items.sort((a, b) => b.prob - a.prob);
+    // Sort by thunderstorm probability descending (nulls at bottom)
+    return items.sort((a, b) => (b.prob ?? -1) - (a.prob ?? -1));
   }, [data, selectedLead]);
 
   const handleSearchSelect = (place: PlaceSelection) => {
@@ -114,7 +115,7 @@ export const CitiesTab: React.FC<CitiesTabProps> = ({
       {!isLoading && !error && cityItems.length > 0 && (
         <div className="space-y-2">
           {cityItems.map((city, idx) => {
-            const sevMeta = getSeverityFromProbability(city.prob);
+            const sevMeta = getSeverityFromProbability(city.prob ?? 0);
             return (
               <button
                 key={city.name}

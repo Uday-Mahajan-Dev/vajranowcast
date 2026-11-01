@@ -70,22 +70,70 @@ function HomePageContent() {
   const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(0.55);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(true);
 
+  // Selected Place State
+  const [selectedPlace, setSelectedPlace] = useState<{ name: string; lat: number; lon: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [nowcastData, setNowcastData] = useState<NowcastResponse | null>(null);
+  const [isLoadingNowcast, setIsLoadingNowcast] = useState(false);
+  const [nowcastError, setNowcastError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Replay Mode State
+  const [activeReplay, setActiveReplay] = useState<HistoricalReplayEvent | null>(null);
+  const [activeReplayHour, setActiveReplayHour] = useState<ReplayTimelineHour | null>(null);
+
   // Sync tab with URL query parameter & handle mobile snap behavior
   const handleTabChange = useCallback(
     (tab: ActiveTab) => {
-      if (tab === activeTab) {
-        // Tapping active tab toggles between peek and half
+      const isSameTab = tab === activeTab;
+      const hadOpenPlace = Boolean(selectedPlace);
+
+      // 1. Immediately reset open place card and abort in-flight requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      setSelectedPlace(null);
+      setNowcastData(null);
+      setNowcastError(null);
+
+      // 2. Clear replay mode if switching tabs
+      setActiveReplay(null);
+      setActiveReplayHour(null);
+
+      // 3. Switch active tab and ensure sheet is open
+      setActiveTab(tab);
+      setIsBottomSheetOpen(true);
+
+      // 4. Update the ?tab= URL param
+      const url = tab === "map" ? "/?tab=map" : `/?tab=${tab}`;
+      window.history.replaceState(null, "", url);
+
+      // 5. Drawer snap behavior on mobile
+      if (isSameTab && !hadOpenPlace) {
         setActiveSnapPoint((prev) => (prev === 0.18 ? 0.55 : 0.18));
       } else {
-        setActiveTab(tab);
         setActiveSnapPoint(0.55);
-        setIsBottomSheetOpen(true);
-        const url = tab === "map" ? "/" : `/?tab=${tab}`;
-        window.history.replaceState(null, "", url);
       }
     },
-    [activeTab]
+    [activeTab, selectedPlace]
   );
+
+  // Listen to popstate for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab") as ActiveTab | null;
+      if (tab && ["map", "cities", "alerts", "replays", "about", "staff"].includes(tab)) {
+        setActiveTab(tab);
+      } else {
+        setActiveTab("map");
+      }
+      setSelectedPlace(null);
+      setNowcastData(null);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // UI Theme & Map Style
   const [themePreference, setThemePreference] = useState<"light" | "dark" | "system">("dark");
@@ -109,18 +157,6 @@ function HomePageContent() {
     showAlertPins: true,
     show3DBuildings: false,
   });
-
-  // Selected Place State
-  const [selectedPlace, setSelectedPlace] = useState<{ name: string; lat: number; lon: number } | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
-  const [nowcastData, setNowcastData] = useState<NowcastResponse | null>(null);
-  const [isLoadingNowcast, setIsLoadingNowcast] = useState(false);
-  const [nowcastError, setNowcastError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Replay Mode State (BUG 2)
-  const [activeReplay, setActiveReplay] = useState<HistoricalReplayEvent | null>(null);
-  const [activeReplayHour, setActiveReplayHour] = useState<ReplayTimelineHour | null>(null);
 
   // Data States
   const [gridPoints, setGridPoints] = useState<GridPointPrediction[]>([]);

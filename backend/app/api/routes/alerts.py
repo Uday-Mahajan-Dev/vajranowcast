@@ -90,7 +90,7 @@ async def generate_alerts(
             if not predictions_by_city:
                 local_file = DATA_DIR / "cities_latest.json"
                 if not local_file.exists():
-                    local_file = Path(__file__).resolve().parent.parent.parent.parent / "frontend" / "public" / "data" / "cities_latest.json"
+                    local_file = Path(__file__).resolve().parents[4] / "frontend" / "public" / "data" / "cities_latest.json"
                 if local_file.exists():
                     try:
                         with open(local_file, "r", encoding="utf-8") as f:
